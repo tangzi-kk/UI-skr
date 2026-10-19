@@ -18,6 +18,8 @@ import android.webkit.WebView;
 import org.json.JSONObject;
 
 import java.io.OutputStream;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -25,6 +27,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Small native bridge. Requires Android 14+ system Health Connect and user consent.
@@ -32,6 +35,7 @@ import java.util.concurrent.Executors;
  * Data is read only on explicit user action. The UI must not infer unavailable data as 0.
  */
 public final class HealthConnectBridge {
+    private static final ExecutorService UPLOADER = Executors.newSingleThreadExecutor();
     private static final String STEPS_PERMISSION = "android.permission.health.READ_STEPS";
     private static final String HEART_PERMISSION = "android.permission.health.READ_HEART_RATE";
     private final Activity activity;
@@ -156,7 +160,7 @@ public final class HealthConnectBridge {
      * Never accept arbitrary credential-bearing HTTP destinations.
      */
     @JavascriptInterface public void uploadDaily(String json, String endpoint, String token) {
-        Executors.newSingleThreadExecutor().execute(() -> {
+        UPLOADER.execute(() -> {
             HttpURLConnection connection = null;
             try {
                 URL url = new URL(endpoint);
@@ -182,8 +186,28 @@ public final class HealthConnectBridge {
                     out.write(payload.toString().getBytes(StandardCharsets.UTF_8));
                 }
                 int status = connection.getResponseCode();
-                JSONObject result = response(status >= 200 && status < 300, status >= 200 && status < 300
-                    ? "Mac 已接收；请检查飞书同步状态" : "Mac 健康接口 HTTP " + status);
+                JSONObject result;
+                try (InputStream stream = status >= 200 && status < 300
+                    ? connection.getInputStream() : connection.getErrorStream()) {
+                    if (stream != null) {
+                        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                        byte[] chunk = new byte[1024];
+                        int n;
+                        while ((n = stream.read(chunk)) >= 0 && buffer.size() < 16384) buffer.write(chunk, 0, n);
+                        result = new JSONObject(buffer.toString("UTF-8"));
+                    } else {
+                        result = response(false, "Mac 健康接口 HTTP " + status);
+                    }
+                } catch (Exception parseError) {
+                    result = response(false, "无法解析 Mac 健康接口返回数据");
+                }
+                try {
+                    if (result.optBoolean("ok") && !result.optBoolean("feishu_synced")) {
+                        result.put("message", "已保存到 Mac，但飞书尚未配置或尚未确认接收");
+                    } else if (result.optBoolean("feishu_synced")) {
+                        result.put("message", "飞书 Webhook 已接收；请在工作流日志确认写入");
+                    }
+                } catch (Exception ignored) {}
                 deliver("onUploadResult", result);
             } catch (Exception error) {
                 deliver("onUploadResult", response(false, "同步失败：" + error.getMessage()));
