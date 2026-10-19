@@ -623,7 +623,8 @@
 
       try {
         const host = getMacSyncHost();
-        const changesToPush = [...scheduleChanges];
+        // 固定发送时的快照；请求飞行期间仍允许用户继续编辑本地记录。
+        const changesToPush = scheduleChanges.map(c => JSON.parse(JSON.stringify(c)));
         const resp = await fetch(`${host}/api/push`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -634,14 +635,26 @@
         const result = await resp.json();
 
         if (result.ok) {
-          const sent = new Set(changesToPush);
-          this.state.pendingChanges = this.state.pendingChanges.filter(c => !sent.has(c));
+          const sent = new Map(scheduleChanges.map((c, index) => [c, JSON.stringify(changesToPush[index])]));
+          this.state.pendingChanges = this.state.pendingChanges.filter(c =>
+            !sent.has(c) || JSON.stringify(c) !== sent.get(c));
           for (const mapping of result.createdRecords || []) {
             if (!mapping._uid || !mapping.record_id) continue;
             const local = this.state.schedules.find(r => r.record_id === mapping._uid);
             if (local) {
               local.record_id = mapping.record_id;
               local.syncStatus = '已同步';
+            } else {
+              // 本地创建期间若被删除，待远端分配 ID 后补一条删除操作。
+              this.state.pendingChanges.push({
+                op: 'soft_delete', record_id: mapping.record_id, fields: { '标记删除': true }
+              });
+            }
+            const editedCreate = this.state.pendingChanges.find(c => c.op === 'create' && c._uid === mapping._uid);
+            if (editedCreate) {
+              editedCreate.op = 'update';
+              editedCreate.record_id = mapping.record_id;
+              delete editedCreate._uid;
             }
           }
           this.state.lastSyncTime = new Date().toLocaleTimeString();
