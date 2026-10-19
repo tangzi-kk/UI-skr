@@ -40,12 +40,13 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.2"
       - name: Install platform SDK
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.1"
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.1"
       - name: Compile Android Debug APK (not a real-device test)
         working-directory: mobile-app/android-project
         run: gradle assembleDebug -Dorg.gradle.java.home="$JAVA_HOME" --no-daemon
