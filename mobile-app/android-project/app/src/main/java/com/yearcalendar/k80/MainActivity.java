@@ -156,8 +156,8 @@ public class MainActivity extends Activity {
             }
         });
 
-        RemoteLogger.i(TAG, "Loading file:///android_asset/schedule.html");
-        mWebView.loadUrl("file:///android_asset/schedule.html");
+        RemoteLogger.i(TAG, "Loading file:///android_asset/mobile-app.html");
+        mWebView.loadUrl("file:///android_asset/mobile-app.html");
     }
 
     private void showErrorScreen(Throwable t) {
