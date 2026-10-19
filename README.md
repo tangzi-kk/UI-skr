@@ -1,6 +1,9 @@
 # 📱 UI 原型与设计灵感参考手册
 
 > 本手册汇集并系统化整理了手机端收藏的 **18 套高质量 UI 原型设计灵感**。所有素材均已完成工业级纯净去杂（剥离手机状态栏、小红书外部控件、手势触控圆点及分享弹窗），并提取出 **77 个独立原型画布、单屏界面、核心组件切图与循环动效 GIF**。
+>
+> 📖 **全栈设计与底层数据字典**：配套完整落地文档请查阅 **[《北极星个人/品牌系统 · AI 前端设计与全栈实施指南》](./POLARIS-AI-DESIGN-GUIDE.md)**（含 29 张飞书 Base 表底层字典、飞书任务 17 个 GUID 映射与三大中枢组件规范）。  
+> 🌐 **飞书在线云文档（实时更新版）**：[https://larkcommunity.feishu.cn/docx/YcT8dcKS9oNIFnxl04Ecn88FnNe](https://larkcommunity.feishu.cn/docx/YcT8dcKS9oNIFnxl04Ecn88FnNe)
 
 ---
 
