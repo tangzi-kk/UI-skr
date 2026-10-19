@@ -70,6 +70,24 @@ async function run() {
   assert.equal(unsent.ok, false);
   assert.equal(localOnly.state.pendingChanges.length, 1);
 
+  let finishCreate, sentUid;
+  const race = setup(async (url, options) => {
+    sentUid = JSON.parse(options.body).changes[0]._uid;
+    return new Promise(resolve => {
+      finishCreate = () => resolve({ ok: true, json: async () => ({
+        ok: true, createdRecords: [{ _uid: sentUid, record_id: 'recRace' }]
+      }) });
+    });
+  });
+  const created = race.addSchedule('初稿', '工作', '2026-10-20');
+  race.updateSchedule(created.record_id, { text: '编辑后的标题' });
+  finishCreate();
+  await race.pushToFeishu();
+  assert.equal(race.state.schedules[0].record_id, 'recRace');
+  assert.equal(race.state.pendingChanges[0].op, 'update');
+  assert.equal(race.state.pendingChanges[0].record_id, 'recRace');
+  assert.equal(race.state.pendingChanges[0].fields['日程标题'], '编辑后的标题');
+
   console.log('PolarisStore sync safety checks passed');
 }
 
