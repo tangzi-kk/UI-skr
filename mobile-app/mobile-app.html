@@ -2296,7 +2296,7 @@
       showToast('正在从飞书多维表格拉取最新排程...');
       try {
         const res = await window.polarisStore.pullFromFeishu();
-        showToast(`已拉取 ${res.count} 条日程；本地待推送记录已保留`);
+        showToast(`当前显示 ${res.count} 条日程；本地待推送记录已保留`);
         closeSyncModal();
       } catch (err) {
         showToast('拉取失败，请确认连接到局域网 Wi-Fi (192.168.1.8:8080)');
@@ -2308,7 +2308,9 @@
       showToast('正在推送本地修改到飞书多维表格...');
       try {
         const result = await window.polarisStore.pushToFeishu();
-        showToast(result.pending ? `日程已推送；另有 ${result.pending} 条记录仅保存在本机` : '日程修改已推送至飞书');
+        showToast(result.pending
+          ? `${result.sent ? '日程已推送；' : ''}另有 ${result.pending} 条记录仅保存在本机`
+          : '日程修改已推送至飞书');
         if (!result.pending) closeSyncModal();
       } catch (err) {
         showToast('推送失败，请确认电脑端服务处于启动状态');
