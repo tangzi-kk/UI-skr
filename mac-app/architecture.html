@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>北极星三大中枢 · 全页面文字符 UI 与目录设计总览</title>
+  
+  <!-- 引入 Mermaid 渲染图表 -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  
+  <style>
+    :root {
+      --bg: #eceae5;
+      --sheet: #fdfcf9;
+      --sheet-border: #d9d4cb;
+      --sheet-subtle: #f5f3ed;
+      --ink-primary: #262b33;
+      --ink-secondary: #71767f;
+      --ink-muted: #a7abb4;
+      
+      /* 三大中枢主题色 */
+      --pillar-eff: #007aff;
+      --pillar-eff-bg: rgba(0, 122, 255, 0.08);
+      --pillar-soul: #10b981;
+      --pillar-soul-bg: rgba(16, 185, 129, 0.08);
+      --pillar-kanban: #f59e0b;
+      --pillar-kanban-bg: rgba(245, 158, 11, 0.08);
+
+      --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.08);
+      --card-shadow: 0 4px 20px rgba(38, 43, 51, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg);
+      background-image: radial-gradient(circle, #dbd8d1 1px, transparent 1px);
+      background-size: 18px 18px;
+      color: var(--ink-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", "Hiragino Sans GB", sans-serif;
+      line-height: 1.6;
+      padding: 20px 14px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1060px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    /* 顶部标头 */
+    .header-card {
+      background: var(--sheet);
+      border: 1px solid var(--sheet-border);
+      border-radius: 20px;
+      padding: 22px 26px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-eff {
+      background: var(--pillar-eff-bg);
+      color: var(--pillar-eff);
+      border: 1px solid rgba(0, 122, 255, 0.25);
+    }
+
+    .badge-soul {
+      background: var(--pillar-soul-bg);
+      color: var(--pillar-soul);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .badge-kanban {
+      background: var(--pillar-kanban-bg);
+      color: var(--pillar-kanban);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--ink-primary);
+    }
+
+    .quote-box {
+      background: var(--sheet-subtle);
+      border-left: 4px solid var(--pillar-soul);
+      padding: 12px 16px;
+      border-radius: 0 10px 10px 0;
+      font-size: 13px;
+      color: var(--ink-secondary);
+      line-height: 1.6;
+    }
+
+    /* 卡片通用 */
+    .section-card {
+      background: var(--sheet);
+      border: 1px solid var(--sheet-border);
+      border-radius: 20px;
+      padding: 22px 24px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .section-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-sub {
+      font-size: 13px;
+      color: var(--ink-secondary);
+      margin-bottom: 18px;
+    }
+
+    /* 树状目录导航设计器 (修正 white-space: pre 确保层级字符生效) */
+    .dir-tree-box {
+      background: #0d1117;
+      color: #e2e8f0;
+      border: 1px solid #283044;
+      border-radius: 14px;
+      padding: 22px 24px;
+      font-family: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Menlo, monospace;
+      font-size: 12.5px;
+      line-height: 1.85;
+      white-space: pre !important; /* 核心修复：强制保留原始空格与垂直换行，杜绝文本坍缩 */
+      word-wrap: normal !important;
+      word-break: normal !important;
+      overflow-x: auto;
+      box-shadow: inset 0 2px 14px rgba(0,0,0,0.5);
+    }
+
+    .dir-tree-box .tree-root { color: #38bdf8; font-weight: 700; font-size: 13.5px; }
+    .dir-tree-box .tree-eff { color: #60a5fa; font-weight: 700; }
+    .dir-tree-box .tree-soul { color: #34d399; font-weight: 700; }
+    .dir-tree-box .tree-kanban { color: #fbbf24; font-weight: 700; }
+    .dir-tree-box .tree-overlay { color: #c084fc; font-weight: 700; }
+    .dir-tree-box .tree-folder { color: #f8fafc; font-weight: 600; }
+    .dir-tree-box .tree-page { color: #e2e8f0; font-weight: 600; }
+    .dir-tree-box .tree-subpage { color: #94a3b8; }
+    .dir-tree-box .tree-drawer { color: #f472b6; }
+    .dir-tree-box .tree-binding { color: #38bdf8; font-size: 11.5px; opacity: 0.9; }
+    .dir-tree-box .tree-slot { color: #94a3b8; font-style: italic; }
+
+    /* 可视化折叠层级树组件 (带真实垂直导轨) */
+    .visual-tree-explorer {
+      background: #0d1117;
+      border: 1px solid #283044;
+      border-radius: 14px;
+      padding: 22px;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      font-size: 13px;
+      box-shadow: inset 0 2px 14px rgba(0,0,0,0.5);
+    }
+
+    .vtree-root {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      color: #38bdf8;
+      font-size: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 16px;
+    }
+
+    .vtree-branch {
+      margin-left: 12px;
+      padding-left: 16px;
+      border-left: 2px solid #333d52;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .vtree-branch.eff { border-left-color: var(--pillar-eff); }
+    .vtree-branch.soul { border-left-color: var(--pillar-soul); }
+    .vtree-branch.kanban { border-left-color: var(--pillar-kanban); }
+    .vtree-branch.overlay { border-left-color: #a855f7; }
+
+    .vtree-branch-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #f1f5f9;
+      margin-bottom: 12px;
+    }
+
+    .vtree-module-box {
+      margin-left: 10px;
+      margin-bottom: 12px;
+      border-left: 2px dashed rgba(255,255,255,0.12);
+      padding-left: 14px;
+    }
+
+    .vtree-module-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      color: #e2e8f0;
+      padding: 5px 10px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 6px;
+      margin-bottom: 6px;
+    }
+
+    .vtree-subpage-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      margin-bottom: 4px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.04);
+      color: #cbd5e1;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .vtree-subpage-item:hover {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      transform: translateX(4px);
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    .vtree-leaf.slot {
+      border-style: dashed;
+      color: #94a3b8;
+    }
+
+    .vtree-tag {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.08);
+      color: #94a3b8;
+    }
+
+    /* 文字符排版检视工作台 */
+    .wireframe-studio {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 820px) {
+      .wireframe-studio {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .studio-nav {
+      background: var(--sheet-subtle);
+      border: 1px solid var(--sheet-border);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 680px;
+      overflow-y: auto;
+    }
+
+    .studio-group-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--ink-muted);
+      text-transform: uppercase;
+      margin-top: 8px;
+      padding: 2px 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .studio-btn {
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: left;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--ink-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .studio-btn:hover {
+      background: rgba(0,0,0,0.04);
+      color: var(--ink-primary);
+    }
+
+    .studio-btn.active {
+      background: #fff;
+      color: var(--accent);
+      border-color: rgba(37,99,235,0.25);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+
+    .studio-stage {
+      background: #141720;
+      border: 1px solid #232838;
+      border-radius: 14px;
+      padding: 18px 20px;
+      overflow-x: auto;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.4);
+    }
+
+    .char-canvas {
+      display: none;
+      font-family: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #e2e8f0;
+      white-space: pre;
+    }
+
+    .char-canvas.active {
+      display: block;
+    }
+
+    .canvas-badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    }
+
+    /* Mermaid 容器 */
+    .mermaid-box {
+      background: var(--sheet-subtle);
+      border: 1px solid var(--sheet-border);
+      border-radius: 14px;
+      padding: 18px;
+      overflow-x: auto;
+      text-align: center;
+    }
+
+    /* 底部条 */
+    .footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      background: var(--sheet);
+      border: 1px solid var(--sheet-border);
+      border-radius: 16px;
+      font-size: 13px;
+      color: var(--ink-secondary);
+    }
+
+    .btn-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* ===== 自由文字编辑与悬浮工具栏系统 ===== */
+    .editor-toolbar {
+      position: fixed;
+      top: 14px;
+      right: 18px;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 30px;
+      padding: 6px 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .editor-toolbar.editing {
+      border-color: #38bdf8;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(56, 189, 248, 0.4);
+    }
+
+    .toolbar-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.08);
+      user-select: none;
+    }
+
+    .toolbar-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+    }
+
+    .toolbar-btn.btn-toggle-edit.active {
+      background: #0284c7;
+      color: #fff;
+      border-color: #38bdf8;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+    }
+
+    .toolbar-btn.btn-save {
+      background: #16a34a;
+      color: #fff;
+    }
+
+    .toolbar-btn.btn-save:hover {
+      background: #15803d;
+    }
+
+    .edit-status-badge {
+      font-size: 11.5px;
+      color: #94a3b8;
+      margin-left: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .edit-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #64748b;
+      transition: all 0.2s ease;
+    }
+
+    .edit-status-dot.active {
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    .edit-status-dot.saving {
+      background: #f59e0b;
+      box-shadow: 0 0 8px #f59e0b;
+    }
+
+    /* 编辑状态下的字符框与目录聚焦 */
+    .char-canvas[contenteditable="plaintext-only"],
+    .char-canvas[contenteditable="true"],
+    .dir-tree-box[contenteditable="plaintext-only"],
+    .dir-tree-box[contenteditable="true"],
+    [data-editable="true"][contenteditable="true"] {
+      outline: 1.5px dashed rgba(56, 189, 248, 0.5) !important;
+      outline-offset: 3px !important;
+      caret-color: #38bdf8 !important;
+      cursor: text !important;
+      background: #090d14 !important;
+    }
+
+    .char-canvas[contenteditable="plaintext-only"]:focus,
+    .char-canvas[contenteditable="true"]:focus,
+    .dir-tree-box[contenteditable="plaintext-only"]:focus,
+    .dir-tree-box[contenteditable="true"]:focus,
+    [data-editable="true"][contenteditable="true"]:focus {
+      outline: 2px solid #38bdf8 !important;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.25) !important;
+    }
+
+    .editing-tip-banner {
+      display: flex;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #0284c7;
+      border-radius: 12px;
+      padding: 9px 15px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 14px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .editing-tip-banner code {
+      background: rgba(0, 0, 0, 0.25);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-weight: 700;
+    }
+
+    /* 弹出 Toast 提示条 */
+    .save-toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #0f172a;
+      color: #f8fafc;
+      border: 1px solid #38bdf8;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.3);
+      padding: 10px 22px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 100000;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .save-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 浮动多功能编辑控制条 -->
+  <div id="editor-toolbar" class="editor-toolbar editing">
+    <button id="btn-toggle-edit" class="toolbar-btn btn-toggle-edit active" onclick="toggleEditMode()" title="切换全局编辑 / 纯浏览模式">
+      <span id="edit-icon">✏️</span>
+      <span id="edit-text">编辑模式: 开启</span>
+    </button>
+    <button class="toolbar-btn btn-save" onclick="saveArchitectureChanges()" title="持久化保存到磁盘文件与缓存 (Cmd+S / Ctrl+S)">
+      <span>💾 保存修改</span>
+    </button>
+    <button class="toolbar-btn" onclick="copyCurrentCanvasText()" title="复制当前画布文字符内容">
+      <span>📋 复制文本</span>
+    </button>
+    <button class="toolbar-btn" onclick="resetToOriginalTemplate()" style="color:#f87171; background:rgba(239,68,68,0.12);" title="丢弃所有本地修改并恢复官方默认模板">
+      <span>🔄 恢复原版</span>
+    </button>
+    <div class="edit-status-badge">
+      <span id="edit-status-dot" class="edit-status-dot active"></span>
+      <span id="edit-status-text">可直接打字编辑</span>
+    </div>
+  </div>
+
+  <!-- Toast 提示容器 -->
+  <div id="save-toast" class="save-toast">✓ 已成功保存修改！</div>
+
+  <div class="container">
+    
+    <!-- 标头卡片 -->
+    <div class="header-card">
+      <div class="header-meta">
+        <span class="badge badge-eff">⚡ 效率中枢</span>
+        <span class="badge badge-soul">🌱 灵气中枢</span>
+        <span class="badge badge-kanban">📊 看板中枢</span>
+        <span style="font-size:12px; color:var(--ink-muted);">全页面字符 UI 蓝图库</span>
+      </div>
+      <h1 class="title">北极星前端全页面目录与文字符 UI 蓝图</h1>
+      
+      <div class="quote-box">
+        <strong>🎨 前端设计总指导原则：</strong><br/>
+        严格按【效率、灵气、看板】三大中枢及其绑定的飞书 Base 实体表，进行全套<strong>一级页面、二级子页面及全局浮动抽屉</strong>的文字符（Box-Drawing 字符）线框展示。<br/>
+        左侧为系统完整的<strong>目录与路由设计（Directory Tree）</strong>，右侧可在检视台中逐页切换走查，真实呈现各页面的信息密度、手势区与排版节奏。
+      </div>
+    </div>
+
+    <!-- 模块一：全站目录与路由设计 (HTML1 目录树) -->
+    <div class="section-card">
+      <div class="section-title">
+        <span>📂</span> 一、系统完整目录与路由设计 (Site & Navigation Directory)
+      </div>
+      <div class="section-sub">
+        全景覆盖 3 大业务中枢、14 个功能模块，展开所有<strong>一级主页面、二级子页面、侧拉抽屉、子模态与飞书 Base 实体表绑定关系</strong>（共 4 级立体深度，绝不折叠）。
+      </div>
+
+      <!-- 视图模式切换胶囊 -->
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <button id="btn-tree-ascii" class="tab-btn active" onclick="toggleTreeMode('ascii')">📄 字符等宽 ASCII 导轨树 (全层级 Pre · 默认展开)</button>
+        <button id="btn-tree-visual" class="tab-btn" onclick="toggleTreeMode('visual')">🌳 可视化嵌套导轨树 (带物理分支与连线)</button>
+      </div>
+
+      <!-- 1. 纯字符等宽 ASCII 导轨树 (Pre 格式 · 默认直接显示 · 绝不塌陷) -->
+      <pre id="tree-mode-ascii" class="dir-tree-box" style="display:block;"><span class="tree-root">/polaris-unified-app (多端统一工作台根目录)</span>
+│
+├── <span class="tree-eff">01_EFFICIENCY/ (⚡ 效率中枢 · 核心执行表区)</span>
+│   │
+│   ├── <span class="tree-folder">📁 01_schedule/</span> (🗓 日程模块 · 路由: /eff/schedule)
+│   │   ├── <span class="tree-page">📄 timeline-stream.page.html</span>    ─── [主页面] 纵向 24h 时间块流 (Notion 规范微色条、上下滑动)
+│   │   ├── <span class="tree-subpage">📄 month-grid-view.page.html</span>    ─── [子页面] 30 天月历热力大盘 (手势轻扫前后切月)
+│   │   ├── <span class="tree-subpage">📄 day-focus-split.page.html</span>    ─── [子页面] 今日单日专注时段拆解图
+│   │   ├── <span class="tree-drawer">📑 schedule-drawer.view</span>         ─── [子抽屉] 05 日程属性抽屉 (CATS 6色分类/Link穿透)
+│   │   └── <span class="tree-binding">🔗 飞书 Base 绑定: [ 05 日程日历表 (rec_91cd) ]</span>
+│   │
+│   ├── <span class="tree-folder">📁 02_action/</span> (⚡ 行动模块 · 路由: /eff/action)
+│   │   ├── <span class="tree-page">📄 frog-today.page.html</span>         ─── [主页面] 今日吃青蛙 P0 聚焦任务看板 (聚焦三件事原则)
+│   │   ├── <span class="tree-subpage">📄 eisenhower-matrix.page.html</span>  ─── [子页面] GTD 紧急/重要四象限矩阵大盘
+│   │   ├── <span class="tree-subpage">📄 task-backlog.page.html</span>       ─── [子页面] 任务待办收集池与延期缓冲池
+│   │   ├── <span class="tree-drawer">📑 action-drawer.view</span>           ─── [子抽屉] 03 任务多维属性侧拉抽屉 (工时/进度/母任务)
+│   │   └── <span class="tree-binding">🔗 飞书 Base 绑定: [ 03 任务看板表 (rec_8a4f) ]</span>
+│   │
+│   ├── <span class="tree-folder">📁 03_reminder/</span> (🔔 提醒模块 · 路由: /eff/reminder)
+│   │   ├── <span class="tree-page">📄 due-warning-flow.page.html</span>    ─── [主页面] 临期预警流与全天到点提醒时间线
+│   │   ├── <span class="tree-subpage">📄 fullscreen-flip-clock.page.html</span> ─── [子页面] 翻页大时钟、倒计时与整点报时声效屏
+│   │   ├── <span class="tree-drawer">📑 reminder-policy.drawer</span>       ─── [子抽屉] 系统横幅通知、声音频率与震动策略配置
+│   │   └── <span class="tree-binding">🔗 飞书 Base 绑定: [ 飞书任务 due 字段 / 05 日程提醒时间 ]</span>
+│   │
+│   ├── <span class="tree-folder">📁 04_focus/</span> (⏳ 专注模块 · 路由: /eff/focus)
+│   │   ├── <span class="tree-page">📄 cat-vinyl-player.page.html</span>    ─── [主页面] 猫咪黑胶留声机与 6 款白噪音沉浸屏
+│   │   ├── <span class="tree-subpage">📄 pomodoro-session.page.html</span>    ─── [子页面] 番茄钟实时计时与阶段性结算卡
+│   │   ├── <span class="tree-drawer">📑 focus-log-drawer.view</span>        ─── [子抽屉] 04 时间记录多维属性抽屉 (专注自动存盘)
+│   │   └── <span class="tree-binding">🔗 飞书 Base 绑定: [ 04 时间记录表 (rec_4e1a) ]</span>
+│   │
+│   └── <span class="tree-folder">📁 05_slot_efficiency/</span> (➕ 等待添加模块 · 路由: /eff/slots)
+│       ├── <span class="tree-page">📦 req-o1-o5-mount.sub.html</span>      ─── [子页面] 01 需求拆解 O1-O5 表挂载视图
+│       ├── <span class="tree-subpage">📦 project-kanban-mount.sub.html</span> ─── [子页面] 02 项目进展看板表挂载视图
+│       ├── <span class="tree-drawer">📑 slot-config.drawer</span>          ─── [子抽屉] 效率中枢数据表动态挂载与字段映射
+│       └── <span class="tree-binding">🔗 飞书 Base 插槽: [ 01 需求表 / 02 项目表 即插即用 ]</span>
+│
+├── <span class="tree-soul">02_VITALITY/ (🌱 灵气中枢 · 管理文件夹表区)</span>
+│   │
+│   ├── <span class="tree-folder">📁 01_ideas/</span> (💡 想法模块 · 路由: /vitality/ideas)
+│   │   ├── <span class="tree-page">📄 sticky-wall.page.html</span>        ─── [主页面] 便笺刮刮板墙 (黄色便笺瀑布流与涂鸦墙)
+│   │   ├── <span class="tree-subpage">📄 quick-capture-modal.html</span>      ─── [子页面] 闪念速记胶囊弹窗 (300ms 本地防抖存盘)
+│   │   ├── <span class="tree-drawer">📑 idea-detail.drawer</span>          ─── [子抽屉] 13 收集便笺属性抽屉 (标签归档/转化至行动)
+│   │   └── <span class="tree-binding">🔗 飞书 Base 绑定: [ 13 收集便笺表 (rec_7b2c) ]</span>
+│   │
+│   ├── <span class="tree-folder">📁 02_mood/</span> (🌤 心情模块 · 路由: /vitality/mood)
+│   │   ├── <span class="tree-page">📄 april-weather.page.html</span>      ─── [主页面] April 微表情气象晴雨表 (30维微表情雷达)
+│   │   ├── <span class="tree-subpage">📄 mood-diary-checkin.page.html</span>  ─── [子页面] 每日心境打卡日记与小确幸录入流
+│   │   ├── <span class="tree-drawer">📑 mood-scores.drawer</span>          ─── [子抽屉] 11 快乐数据 30 维属性抽屉 (情绪归因/能量)
+│   │   └── <span class="tree-binding">🔗 飞书 Base 绑定: [ 11 快乐数据30维评分表 / 12 心情表 ]</span>
+│   │
+│   ├── <span class="tree-folder">📁 03_intimacy/</span> (❤️ 亲密模块 · 路由: /vitality/intimacy)
+│   │   ├── <span class="tree-page">📄 intimacy-grid.page.html</span>       ─── [主页面] 重要羁绊网格与深层人际档案
+│   │   ├── <span class="tree-subpage">📄 anniversary-countdown.page.html</span>─── [子页面] 纪念日倒数、感动时刻与心愿墙
+│   │   ├── <span class="tree-drawer">📑 intimacy-memo.drawer</span>        ─── [子抽屉] 亲密互动随手记与礼物灵感侧拉抽屉
+│   │   └── <span class="tree-binding">🔗 飞书 Base 绑定: [ 亲密关系随手记 / 纪念日数据表 ]</span>
+│   │
+│   ├── <span class="tree-folder">📁 04_rest/</span> (🌙 休息模块 · 路由: /vitality/rest)
+│   │   ├── <span class="tree-page">📄 sleep-yinyang-clock.page.html</span> ─── [主页面] 太极阴阳睡眠钟 (昼夜节律与就寝对账)
+│   │   ├── <span class="tree-subpage">📄 breath-guide-screen.page.html</span> ─── [子页面] 4-7-8 深度呼吸引导与助眠声波屏
+│   │   ├── <span class="tree-drawer">📑 sleep-eval.drawer</span>            ─── [子抽屉] 睡眠质量评估与疲倦度自查抽屉
+│   │   └── <span class="tree-binding">🔗 飞书 Base 绑定: [ 睡眠数据表 / 休息节律表 ]</span>
+│   │
+│   └── <span class="tree-folder">📁 05_slot_vitality/</span> (➕ 等待添加模块 · 路由: /vitality/slots)
+│       ├── <span class="tree-page">📦 habit-checklist.sub.html</span>      ─── [子页面] 20 习惯清单打卡表挂载视图
+│       ├── <span class="tree-subpage">📦 behavior-correction.sub.html</span>  ─── [子页面] 24 行为纠正复盘表挂载视图
+│       ├── <span class="tree-drawer">📑 slot-vitality.drawer</span>         ─── [子抽屉] 管理文件夹心神修养表即插即用配置
+│       └── <span class="tree-binding">🔗 飞书 Base 插槽: [ 20 习惯清单表 / 24 行为纠正表 ]</span>
+│
+├── <span class="tree-kanban">03_KANBAN/ (📊 看板中枢 · 复盘与配置表区)</span>
+│   │
+│   ├── <span class="tree-folder">📁 01_points/</span> (🏆 积分模块 · 路由: /kanban/points)
+│   │   ├── <span class="tree-page">📄 points-dashboard.page.html</span>    ─── [主页面] 成长点数总盘、等级段位与勋章墙
+│   │   ├── <span class="tree-subpage">📄 points-exchange-mall.page.html</span>─── [子页面] 91 积分商城与自我奖励愿望兑换
+│   │   ├── <span class="tree-drawer">📑 points-audit.drawer</span>          ─── [子抽屉] 积分增减明细与原则对照抽屉
+│   │   └── <span class="tree-binding">🔗 飞书 Base 绑定: [ 91 积分原则表 (rec_p91a) ]</span>
+│   │
+│   ├── <span class="tree-folder">📁 02_curves/</span> (📈 曲线模块 · 路由: /kanban/curves)
+│   │   ├── <span class="tree-page">📄 ebbinghaus-review.page.html</span>    ─── [主页面] 35 艾宾浩斯复习曲线与记忆度追踪
+│   │   ├── <span class="tree-subpage">📄 energy-frequency-chart.page.html</span>─── [子页面] 7 天专注折线与习惯打卡频率热力图
+│   │   ├── <span class="tree-drawer">📑 curve-params.drawer</span>          ─── [子抽屉] 曲线参数、复习周期与样本属性抽屉
+│   │   └── <span class="tree-binding">🔗 飞书 Base 绑定: [ 35 曲线表 (rec_c35f) ]</span>
+│   │
+│   ├── <span class="tree-folder">📁 03_panorama/</span> (🗺️ 自定义全景模块 · 路由: /kanban/panorama)
+│   │   ├── <span class="tree-page">📄 pixel-matrix-365.page.html</span>    ─── [主页面] 365 天像素年度画板 (全景生命方格)
+│   │   ├── <span class="tree-subpage">📄 daily-summary-4fields.page.html</span>─── [子页面] 一天总结四字段复盘矩阵 (得/失/悟/行)
+│   │   ├── <span class="tree-drawer">📑 panorama-config.drawer</span>       ─── [子抽屉] 年度画板网格参数与配色主题配置
+│   │   └── <span class="tree-binding">🔗 飞书 Base 绑定: [ 90 年度画板配置表 / 一天总结四字段 ]</span>
+│   │
+│   └── <span class="tree-folder">📁 04_slot_kanban/</span> (➕ 等待添加模块 · 路由: /kanban/slots)
+│       ├── <span class="tree-page">📦 periodic-review.sub.html</span>      ─── [子页面] 07 周期深度复盘表挂载视图
+│       ├── <span class="tree-subpage">📦 skill-tree.sub.html</span>            ─── [子页面] 30 技能刻意练习树挂载视图
+│       ├── <span class="tree-drawer">📑 slot-kanban.drawer</span>           ─── [子抽屉] 复盘表与技能表扩展插槽配置
+│       └── <span class="tree-binding">🔗 飞书 Base 插槽: [ 07 周期复盘表 / 30 技能清单表 ]</span>
+│
+└── <span class="tree-overlay">04_GLOBAL_OVERLAYS/ (🪟 全局通用交互浮层与侧拉抽屉)</span>
+    ├── <span class="tree-page">📑 property-drawer.view.html</span>         ─── [全局侧拉抽屉] Notion 规范多维属性抽屉 (CATS 6色/Link穿透)
+    ├── <span class="tree-page">✍️ quick-create-modal.html</span>           ─── [全局极速新建] 300ms 本地存稿防抖浮窗 (意外刷新零丢失)
+    └── <span class="tree-page">🔄 feishu-sync-probe.modal</span>           ─── [全局网络探针] 飞书 Base 状态探针与 8080 局域网服务对账</pre>
+
+      <!-- 2. 可视化嵌套交互导轨树 (带物理分支与连线 · 备用切换) -->
+      <div id="tree-mode-visual" class="visual-tree-explorer" style="display:none;">
+        <div class="vtree-root">
+          <span>💻</span>
+          <span>/polaris-unified-app</span>
+          <span style="font-size:12px; font-weight:normal; color:#94a3b8;">(多平台统一工作台根空间 · 4级立体架构)</span>
+        </div>
+
+        <!-- 01 效率中枢 -->
+        <div class="vtree-branch eff">
+          <div class="vtree-branch-header">
+            <span>📁 01_EFFICIENCY/</span>
+            <span class="vtree-tag" style="color:var(--pillar-eff);">⚡ 效率中枢 · 核心执行表区</span>
+          </div>
+
+          <!-- 01_schedule -->
+          <div class="vtree-module-box">
+            <div class="vtree-module-title">
+              <span>📁 01_schedule/ (🗓 日程模块)</span>
+              <span class="vtree-tag">绑: 05日程日历表</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('eff-schedule', document.querySelector('[onclick*=eff-schedule]'))">
+              <span>├── 📄 <strong>timeline-stream.page.html</strong></span>
+              <span class="vtree-tag">[主页面] 纵向 24h 时间块流</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('eff-schedule', document.querySelector('[onclick*=eff-schedule]'))">
+              <span>├── 📄 <strong>month-grid-view.page.html</strong></span>
+              <span class="vtree-tag">[子页面] 30 天月历热力大盘</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('ov-drawer', document.querySelector('[onclick*=ov-drawer]'))">
+              <span>└── 📑 <strong>schedule-drawer.view</strong></span>
+              <span class="vtree-tag" style="color:#f472b6;">[子抽屉] Notion 6色多维属性</span>
+            </div>
+          </div>
+
+          <!-- 02_action -->
+          <div class="vtree-module-box">
+            <div class="vtree-module-title">
+              <span>📁 02_action/ (⚡ 行动模块)</span>
+              <span class="vtree-tag">绑: 03任务看板表</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('eff-action', document.querySelector('[onclick*=eff-action]'))">
+              <span>├── 📄 <strong>frog-today.page.html</strong></span>
+              <span class="vtree-tag">[主页面] 吃青蛙 P0 看板</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('eff-action', document.querySelector('[onclick*=eff-action]'))">
+              <span>├── 📄 <strong>eisenhower-matrix.page.html</strong></span>
+              <span class="vtree-tag">[子页面] GTD 四象限矩阵</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('ov-drawer', document.querySelector('[onclick*=ov-drawer]'))">
+              <span>└── 📑 <strong>action-drawer.view</strong></span>
+              <span class="vtree-tag" style="color:#f472b6;">[子抽屉] 任务属性与工时进度</span>
+            </div>
+          </div>
+
+          <!-- 03_reminder -->
+          <div class="vtree-module-box">
+            <div class="vtree-module-title">
+              <span>📁 03_reminder/ (🔔 提醒模块)</span>
+              <span class="vtree-tag">绑: 飞书任务 due</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('eff-reminder', document.querySelector('[onclick*=eff-reminder]'))">
+              <span>├── 📄 <strong>due-warning-flow.page.html</strong></span>
+              <span class="vtree-tag">[主页面] 临期预警时间线</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('eff-reminder', document.querySelector('[onclick*=eff-reminder]'))">
+              <span>└── 📄 <strong>fullscreen-flip-clock.page.html</strong></span>
+              <span class="vtree-tag">[子页面] 翻页大时钟屏</span>
+            </div>
+          </div>
+
+          <!-- 04_focus -->
+          <div class="vtree-module-box">
+            <div class="vtree-module-title">
+              <span>📁 04_focus/ (⏳ 专注模块)</span>
+              <span class="vtree-tag">绑: 04时间记录表</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('eff-focus', document.querySelector('[onclick*=eff-focus]'))">
+              <span>├── 📄 <strong>cat-vinyl-player.page.html</strong></span>
+              <span class="vtree-tag">[主页面] 猫咪留声机白噪音</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('eff-focus', document.querySelector('[onclick*=eff-focus]'))">
+              <span>└── 📄 <strong>pomodoro-session.page.html</strong></span>
+              <span class="vtree-tag">[子页面] 番茄钟结算卡</span>
+            </div>
+          </div>
+
+          <!-- 05_slot -->
+          <div class="vtree-module-box">
+            <div class="vtree-module-title">
+              <span>📁 05_slot_efficiency/ (➕ 效率插槽)</span>
+              <span class="vtree-tag">待挂载核心表</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('eff-slot', document.querySelector('[onclick*=eff-slot]'))">
+              <span>├── 📦 <strong>req-o1-o5-mount.sub.html</strong></span>
+              <span class="vtree-tag">[子页面] 01 需求拆解表</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('eff-slot', document.querySelector('[onclick*=eff-slot]'))">
+              <span>└── 📦 <strong>project-kanban-mount.sub.html</strong></span>
+              <span class="vtree-tag">[子页面] 02 项目进展看板</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 02 灵气中枢 -->
+        <div class="vtree-branch soul">
+          <div class="vtree-branch-header">
+            <span>📁 02_VITALITY/</span>
+            <span class="vtree-tag" style="color:var(--pillar-soul);">🌱 灵气中枢 · 管理文件夹表区</span>
+          </div>
+
+          <!-- 01_ideas -->
+          <div class="vtree-module-box">
+            <div class="vtree-module-title">
+              <span>📁 01_ideas/ (💡 想法模块)</span>
+              <span class="vtree-tag">绑: 13收集便笺表</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('soul-ideas', document.querySelector('[onclick*=soul-ideas]'))">
+              <span>├── 📄 <strong>sticky-wall.page.html</strong></span>
+              <span class="vtree-tag">[主页面] 便笺刮刮板墙</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('soul-ideas', document.querySelector('[onclick*=soul-ideas]'))">
+              <span>└── 📄 <strong>quick-capture-modal.html</strong></span>
+              <span class="vtree-tag">[子页面] 闪念草稿速记胶囊</span>
+            </div>
+          </div>
+
+          <!-- 02_mood -->
+          <div class="vtree-module-box">
+            <div class="vtree-module-title">
+              <span>📁 02_mood/ (🌤 心情模块)</span>
+              <span class="vtree-tag">绑: 11快乐数据30维</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('soul-mood', document.querySelector('[onclick*=soul-mood]'))">
+              <span>├── 📄 <strong>april-weather.page.html</strong></span>
+              <span class="vtree-tag">[主页面] April 微表情晴雨表</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('soul-mood', document.querySelector('[onclick*=soul-mood]'))">
+              <span>└── 📄 <strong>mood-diary-checkin.page.html</strong></span>
+              <span class="vtree-tag">[子页面] 每日心境打卡日记</span>
+            </div>
+          </div>
+
+          <!-- 03_intimacy -->
+          <div class="vtree-module-box">
+            <div class="vtree-module-title">
+              <span>📁 03_intimacy/ (❤️ 亲密模块)</span>
+              <span class="vtree-tag">绑: 亲密关系随手记</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('soul-intimacy', document.querySelector('[onclick*=soul-intimacy]'))">
+              <span>├── 📄 <strong>intimacy-grid.page.html</strong></span>
+              <span class="vtree-tag">[主页面] 重要羁绊网格档案</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('soul-intimacy', document.querySelector('[onclick*=soul-intimacy]'))">
+              <span>└── 📄 <strong>anniversary-countdown.page.html</strong></span>
+              <span class="vtree-tag">[子页面] 纪念日倒数与感动瞬间</span>
+            </div>
+          </div>
+
+          <!-- 04_rest -->
+          <div class="vtree-module-box">
+            <div class="vtree-module-title">
+              <span>📁 04_rest/ (🌙 休息模块)</span>
+              <span class="vtree-tag">绑: 睡眠对账表</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('soul-rest', document.querySelector('[onclick*=soul-rest]'))">
+              <span>├── 📄 <strong>sleep-yinyang-clock.page.html</strong></span>
+              <span class="vtree-tag">[主页面] 太极阴阳睡眠钟</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('soul-rest', document.querySelector('[onclick*=soul-rest]'))">
+              <span>└── 📄 <strong>breath-guide-screen.page.html</strong></span>
+              <span class="vtree-tag">[子页面] 4-7-8 呼吸引导屏</span>
+            </div>
+          </div>
+
+          <!-- 05_slot -->
+          <div class="vtree-module-box">
+            <div class="vtree-module-title">
+              <span>📁 05_slot_vitality/ (➕ 灵气插槽)</span>
+              <span class="vtree-tag">管理文件夹表区</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('soul-slot', document.querySelector('[onclick*=soul-slot]'))">
+              <span>├── 📦 <strong>habit-checklist.sub.html</strong></span>
+              <span class="vtree-tag">[子页面] 20 习惯清单打卡</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('soul-slot', document.querySelector('[onclick*=soul-slot]'))">
+              <span>└── 📦 <strong>behavior-correction.sub.html</strong></span>
+              <span class="vtree-tag">[子页面] 24 行为纠正复盘</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 03 看板中枢 -->
+        <div class="vtree-branch kanban">
+          <div class="vtree-branch-header">
+            <span>📁 03_KANBAN/</span>
+            <span class="vtree-tag" style="color:var(--pillar-kanban);">📊 看板中枢 · 复盘与配置表区</span>
+          </div>
+
+          <!-- 01_points -->
+          <div class="vtree-module-box">
+            <div class="vtree-module-title">
+              <span>📁 01_points/ (🏆 积分模块)</span>
+              <span class="vtree-tag">绑: 91积分原则表</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('kanban-points', document.querySelector('[onclick*=kanban-points]'))">
+              <span>├── 📄 <strong>points-dashboard.page.html</strong></span>
+              <span class="vtree-tag">[主页面] 成长点数总盘</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('kanban-points', document.querySelector('[onclick*=kanban-points]'))">
+              <span>└── 📄 <strong>points-exchange-mall.page.html</strong></span>
+              <span class="vtree-tag">[子页面] 91 积分商城兑换</span>
+            </div>
+          </div>
+
+          <!-- 02_curves -->
+          <div class="vtree-module-box">
+            <div class="vtree-module-title">
+              <span>📁 02_curves/ (📈 曲线模块)</span>
+              <span class="vtree-tag">绑: 35曲线表</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('kanban-curves', document.querySelector('[onclick*=kanban-curves]'))">
+              <span>├── 📄 <strong>ebbinghaus-review.page.html</strong></span>
+              <span class="vtree-tag">[主页面] 35 遗忘复习曲线</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('kanban-curves', document.querySelector('[onclick*=kanban-curves]'))">
+              <span>└── 📄 <strong>energy-frequency-chart.page.html</strong></span>
+              <span class="vtree-tag">[子页面] 7天专注折线与打卡热力</span>
+            </div>
+          </div>
+
+          <!-- 03_panorama -->
+          <div class="vtree-module-box">
+            <div class="vtree-module-title">
+              <span>📁 03_panorama/ (🗺️ 自定义全景)</span>
+              <span class="vtree-tag">绑: 90年度画板配置</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('kanban-panorama', document.querySelector('[onclick*=kanban-panorama]'))">
+              <span>├── 📄 <strong>pixel-matrix-365.page.html</strong></span>
+              <span class="vtree-tag">[主页面] 365天像素年度画板</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('kanban-panorama', document.querySelector('[onclick*=kanban-panorama]'))">
+              <span>└── 📄 <strong>daily-summary-4fields.page.html</strong></span>
+              <span class="vtree-tag">[子页面] 一天总结四字段复盘</span>
+            </div>
+          </div>
+
+          <!-- 04_slot -->
+          <div class="vtree-module-box">
+            <div class="vtree-module-title">
+              <span>📁 04_slot_kanban/ (➕ 看板插槽)</span>
+              <span class="vtree-tag">复盘与技能表区</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('kanban-slot', document.querySelector('[onclick*=kanban-slot]'))">
+              <span>├── 📦 <strong>periodic-review.sub.html</strong></span>
+              <span class="vtree-tag">[子页面] 07 周期深度复盘表</span>
+            </div>
+            <div class="vtree-subpage-item" onclick="switchCanvas('kanban-slot', document.querySelector('[onclick*=kanban-slot]'))">
+              <span>└── 📦 <strong>skill-tree.sub.html</strong></span>
+              <span class="vtree-tag">[子页面] 30 技能刻意练习树</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 04 全局通用抽屉 -->
+        <div class="vtree-branch overlay">
+          <div class="vtree-branch-header">
+            <span>📁 04_GLOBAL_OVERLAYS/</span>
+            <span class="vtree-tag" style="color:#c084fc;">🪟 全局通用交互浮层</span>
+          </div>
+          <div class="vtree-subpage-item" onclick="switchCanvas('ov-drawer', document.querySelector('[onclick*=ov-drawer]'))">
+            <span>├── 📑 <strong>property-drawer.view.html</strong></span>
+            <span class="vtree-tag">[全局侧拉抽屉] Notion 6色分类与Link穿透</span>
+          </div>
+          <div class="vtree-subpage-item" onclick="switchCanvas('ov-create', document.querySelector('[onclick*=ov-create]'))">
+            <span>├── ✍️ <strong>quick-create-modal.html</strong></span>
+            <span class="vtree-tag">[全局极速新建] 300ms 本地存稿防抖浮窗</span>
+          </div>
+          <div class="vtree-subpage-item" onclick="switchCanvas('ov-sync', document.querySelector('[onclick*=ov-sync]'))">
+            <span>└── 🔄 <strong>feishu-sync-probe.modal</strong></span>
+            <span class="vtree-tag">[全局网络探针] 飞书 Base 状态探针与对账</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 模块二：文字符全页面 UI 检视台 -->
+    <div class="section-card">
+      <div class="section-title">
+        <span>🖥️</span> 二、文字符全页面与子页面 UI 蓝图检视台 (点击左侧目录切换)
+      </div>
+      <div class="section-sub">
+        使用高精度 Unicode Box-Drawing 字符完整呈现 14 个独立模块的实际排版线框与手势操作规范。
+      </div>
+
+      <div class="editing-tip-banner">
+        <span>✍️ <strong>文字自由编辑已就绪</strong>：点击右侧字符画板或上方 ASCII 目录树的任意文字，可直接打字、修改排版。支持 <code>Tab</code> 键缩进，按 <code>Cmd + S</code> 即可永久写入文件。</span>
+        <button class="toolbar-btn btn-save" onclick="saveArchitectureChanges()" style="padding:4px 10px; font-size:11.5px;">💾 立即保存</button>
+      </div>
+
+      <div class="wireframe-studio">
+        <!-- 左侧快速跳转导航 -->
+        <div class="studio-nav">
+          <div class="studio-group-title"><span>⚡ 效率中枢页面</span><span>5</span></div>
+          <button class="studio-btn active" onclick="switchCanvas('eff-schedule', this)">🗓 1.1 日程模块</button>
+          <button class="studio-btn" onclick="switchCanvas('eff-action', this)">⚡ 1.2 行动模块</button>
+          <button class="studio-btn" onclick="switchCanvas('eff-reminder', this)">🔔 1.3 提醒模块</button>
+          <button class="studio-btn" onclick="switchCanvas('eff-focus', this)">⏳ 1.4 专注模块</button>
+          <button class="studio-btn" onclick="switchCanvas('eff-slot', this)">➕ 1.5 等待添加插槽</button>
+
+          <div class="studio-group-title"><span>🌱 灵气中枢页面</span><span>5</span></div>
+          <button class="studio-btn" onclick="switchCanvas('soul-ideas', this)">💡 2.1 想法模块</button>
+          <button class="studio-btn" onclick="switchCanvas('soul-mood', this)">🌤 2.2 心情模块</button>
+          <button class="studio-btn" onclick="switchCanvas('soul-intimacy', this)">❤️ 2.3 亲密模块</button>
+          <button class="studio-btn" onclick="switchCanvas('soul-rest', this)">🌙 2.4 休息模块</button>
+          <button class="studio-btn" onclick="switchCanvas('soul-slot', this)">➕ 2.5 等待添加插槽</button>
+
+          <div class="studio-group-title"><span>📊 看板中枢页面</span><span>4</span></div>
+          <button class="studio-btn" onclick="switchCanvas('kanban-points', this)">🏆 3.1 积分模块</button>
+          <button class="studio-btn" onclick="switchCanvas('kanban-curves', this)">📈 3.2 曲线模块</button>
+          <button class="studio-btn" onclick="switchCanvas('kanban-panorama', this)">🗺️ 3.3 自定义全景</button>
+          <button class="studio-btn" onclick="switchCanvas('kanban-slot', this)">➕ 3.4 等待添加插槽</button>
+
+          <div class="studio-group-title"><span>🪟 全局通用抽屉</span><span>3</span></div>
+          <button class="studio-btn" onclick="switchCanvas('ov-drawer', this)">📑 4.1 Notion 属性抽屉</button>
+          <button class="studio-btn" onclick="switchCanvas('ov-create', this)">✍️ 4.2 极速新建存稿窗</button>
+          <button class="studio-btn" onclick="switchCanvas('ov-sync', this)">🔄 4.3 飞书 Base 探针</button>
+        </div>
+
+        <!-- 右侧字符线框舞台 -->
+        <div class="studio-stage">
+          
+          <!-- 1.1 日程模块 -->
+          <div id="canvas-eff-schedule" class="char-canvas active">
+<span class="canvas-badge" style="background:#1e3a8a; color:#93c5fd;">⚡ 效率中枢 · 1.1 日程模块 (绑定 05 日程日历表)</span>
+┌────────────────────────────────────────────────────────┐
+│ ‹ 2026年10月16日 周五 ›   [今天]   [日] [周] [月]  ✦ 罗盘│ ← 顶栏防挤压月日周紧凑导航
+├────────────────────────────────────────────────────────┤
+│ [全部 4] [工作 2] [生活 1] [运动 1] [睡眠 1] [学习 0]   │ ← CATS 官方 6 色标签快速胶囊筛选
+├────────────────────────────────────────────────────────┤
+│ 08:00                                                  │
+│ 09:00 ┌──────────────────────────────────────────────┐ │
+│       │ ▌ [工作] 多平台统一新架构开发 (2.5h)          │ │ ← 3.5px 色条 + 12% 柔和底色
+│       │   起止: 09:00 - 11:30  |  Note: 模块完全解耦 │ │ ← 单击呼出 Notion 属性侧拉抽屉
+│       │   Link: 03任务看板(O1拆分) · 飞书已同步 ✓    │ │
+│ 10:00 └──────────────────────────────────────────────┘ │
+│ 11:00                                                  │
+│ 12:00 ┌──────────────────────────────────────────────┐ │
+│       │ ▌ [生活] 营养午餐与太极休息 (1.0h)            │ │ ← 长按 320ms 可垂直自由拖拽调整时段
+│       └──────────────────────────────────────────────┘ │
+│ 13:00                                                  │
+│ 14:00 ┌──────────────────────────────────────────────┐ │
+│       │ ▌ [工作] 代码 Review 与 AST 静态体检          │ │ ← 时间块 touch-action: pan-y 放行滚屏
+│       └──────────────────────────────────────────────┘ │
+│ (支持全屏左右手势轻扫快速切日前后天/前后周，上下顺畅自然滚屏)   │
+├────────────────────────────────────────────────────────┤
+│   [📅 日程]    [⚡ 行动]    [📊 看板]    [⏳ 专注]    [💡 便笺] │ ← 底部常驻 5 键 48px 热区 Dock
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 1.2 行动模块 -->
+          <div id="canvas-eff-action" class="char-canvas">
+<span class="canvas-badge" style="background:#1e3a8a; color:#93c5fd;">⚡ 效率中枢 · 1.2 行动模块 (绑定 03 任务看板表)</span>
+┌────────────────────────────────────────────────────────┐
+│ ⚡ 今日行动中枢 (Action Hub)             [+ 新建行动]   │
+├────────────────────────────────────────────────────────┤
+│ 🐸 今日吃青蛙 · 核心三件事 (Eat That Frog P0)           │
+│ ┌────────────────────────────────────────────────────┐ │
+│ │ [√] 1. 完成三大中枢与飞书实体表映射架构 (已核销 +15pt)│ │ ← 打勾立即联动积分与完成打卡
+│ │ [ ] 2. 编写全页面文字符 UI 蓝图检视台 (当前进行中)    │ │
+│ │ [ ] 3. 局域网分发页 APK 与脚本全流程测试            │ │
+│ └────────────────────────────────────────────────────┘ │
+│                                                        │
+│ 🧭 GTD 四象限待办清单                                  │
+│ ┌──────────────────────────┬─────────────────────────┐ │
+│ │ 第一象限: 重要且紧急 (P0) │ 第二象限: 重要不紧急(P1) │ │
+│ │ • 完成飞书 Base 认证更新 │ • 规划下季度 365 天复盘 │ │
+│ │ • 修复 8080 端口资源 404 │ • 学习 Rust 宏编程架构   │ │
+│ ├──────────────────────────┼─────────────────────────┤ │
+│ │ 第三象限: 紧急不重要 (P2) │ 第四象限: 不紧急不重要  │ │
+│ │ • 整理桌面下载历史文件   │ • 闲逛设计组件社区       │ │
+│ └──────────────────────────┴─────────────────────────┘ │
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 1.3 提醒模块 -->
+          <div id="canvas-eff-reminder" class="char-canvas">
+<span class="canvas-badge" style="background:#1e3a8a; color:#93c5fd;">⚡ 效率中枢 · 1.3 提醒模块 (绑定 飞书任务 due 通道)</span>
+┌────────────────────────────────────────────────────────┐
+│ 🔔 智能提醒中枢 (Reminder & Alarm)         [系统设置]  │
+├────────────────────────────────────────────────────────┤
+│ ⏰ 今日临近提醒队列                                    │
+│ ┌────────────────────────────────────────────────────┐ │
+│ │ 11:30  午餐与深呼吸休息提醒                         │ │
+│ │        横幅通知 + Glass 音效 + 可选 TTS 语音播报   │ │
+│ ├────────────────────────────────────────────────────┤ │
+│ │ 17:00  全天进度巡检对账提醒                         │ │
+│ │        自动触发飞书任务由于期检测                  │ │
+│ ├────────────────────────────────────────────────────┤ │
+│ │ 20:02  晚间精力管理与快乐数据评分 (固定提醒)        │ │
+│ │        联动飞书任务推送通知                        │ │
+│ └────────────────────────────────────────────────────┘ │
+│                                                        │
+│ 🍎 原生生态同步                                        │
+│ • macOS 原生「提醒事项 (Reminders)」联动: [已开启 ✓]     │
+│ • 到点声音反馈: [Glass.aiff]  |  TTS 语音: [Tingting]   │
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 1.4 专注模块 -->
+          <div id="canvas-eff-focus" class="char-canvas">
+<span class="canvas-badge" style="background:#1e3a8a; color:#93c5fd;">⚡ 效率中枢 · 1.4 专注模块 (绑定 04 时间记录表)</span>
+┌────────────────────────────────────────────────────────┐
+│ ⏳ 专注与留声机中枢 (CatVinyl & Focus)                 │
+├────────────────────────────────────────────────────────┤
+│                      ╭──────────╮                      │
+│                   ╭──╯  (黑胶)  ╰──╮                   │
+│                   │   ◎ 奶牛猫微标  │   (微旋转动效)    │
+│                   ╰──╮   25:00  ╭──╯                   │
+│                      ╰──────────╯                      │
+│                  当前番茄钟: 第 2 / 4 轮                │
+│             正在专注: [工作] 移动端新架构设计          │
+│                                                        │
+│   [  ▶ 开始专注  ]        [  ☕ 休息 5 分钟  ]          │
+│                                                        │
+│ 🎧 今日自然白噪音调音台 (Web Audio API 真实滤波合成)    │
+│ • 自然雨声 (Soft Rain)   ────────●───── 65%            │
+│ • 温暖篝火 (Campfire)    ──────●─────── 45%            │
+│ • 海浪潮汐 (Ocean Wave)  ──●─────────── 20%            │
+│                                                        │
+│ ⏱ 结束自动动作: 闭环耗时 -> 写入 04 时间记录表 (自动计算时间块)│
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 1.5 效率待添加插槽 -->
+          <div id="canvas-eff-slot" class="char-canvas">
+<span class="canvas-badge" style="background:#475569; color:#cbd5e1;">⚡ 效率中枢 · 1.5 待添加插槽 (预留: 01需求表 / 02项目表)</span>
+┌────────────────────────────────────────────────────────┐
+│ ➕ 效率扩展插槽位 (Plugin Slot · Table Driven)          │
+├────────────────────────────────────────────────────────┤
+│ 待接入核心表 1: 01 需求表 (tblGbaPJFZTKgEsf)            │
+│ • 功能规划: O1-O5 子动作一键自动化分解为行动 P0-P3     │
+│ • 状态: 预留标准插槽容器，待确认字段后激活             │
+│                                                        │
+│ 待接入核心表 2: 02 项目表                               │
+│ • 功能规划: 大目标甘特推进、里程碑阶段卡点追踪         │
+│ • 状态: 预留标准插槽容器，支持按需挂载                 │
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 2.1 想法模块 -->
+          <div id="canvas-soul-ideas" class="char-canvas">
+<span class="canvas-badge" style="background:#064e3b; color:#6ee7b7;">🌱 灵气中枢 · 2.1 想法模块 (绑定 13 收集便笺表)</span>
+┌────────────────────────────────────────────────────────┐
+│ 💡 灵感与闪念刮刮板 (Ideas Scratchpad)     [+ 新便笺]  │
+├────────────────────────────────────────────────────────┤
+│ ┌──────────────────────┐  ┌──────────────────────────┐ │
+│ │ 📌 便笺 #1 (黄色暖纸) │  │ 📌 便笺 #2 (薄荷绿)      │ │
+│ │ 架构不应是单体大文件 │  │ 休息不是偷懒，太极阴阳   │ │
+│ │ 必须让三大中枢有明确 │  │ 钟必须给足能量回血提醒   │ │
+│ │ 的生命力边界！       │  │                          │ │
+│ │                      │  │                          │ │
+│ │ 刚刚 · [⚡ 转行动 P0]│  │ 2小时前 · [已转行动 ✓]   │ │
+│ └──────────────────────┘  └──────────────────────────┘ │
+│ ┌──────────────────────┐  ┌──────────────────────────┐ │
+│ │ 📌 便笺 #3 (天蓝纸感) │  │ ➕ 点击添加灵感草稿...   │ │
+│ │ 手机端左右轻扫切日   │  │                          │ │
+│ │ 体验极其丝滑，保留！ │  │ (300ms 本地草稿实时存盘) │ │
+│ └──────────────────────┘  └──────────────────────────┘ │
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 2.2 心情模块 -->
+          <div id="canvas-soul-mood" class="char-canvas">
+<span class="canvas-badge" style="background:#064e3b; color:#6ee7b7;">🌱 灵气中枢 · 2.2 心情模块 (绑定 11 快乐数据 30 维表)</span>
+┌────────────────────────────────────────────────────────┐
+│ 🌤 April 风格微表情气象日历 (Mood & Energy)            │
+├────────────────────────────────────────────────────────┤
+│ 今日心境气象: [  😊 心流充实  ]   能量值: [ 85 / 100 ⚡ ]│
+│                                                        │
+│ 10月微表情心情点阵图:                                   │
+│ 一   二   三   四   五   六   日                       │
+│ 01   02   03   04   05   06   07                       │
+│ 😊   😌   ⚡   🌿   😊   🥳   😴                       │
+│ 08   09   10   11   12   13   14                       │
+│ ⚡   😊   😌   🤔   😊   🌿   😊                       │
+│ 15   16                                                │
+│ ⚡   [😊] (今日: 高能量架构落地中)                     │
+│                                                        │
+│ 晚间 20:02 联动提醒: 填写 11 快乐数据 30 维度全息评分   │
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 2.3 亲密模块 -->
+          <div id="canvas-soul-intimacy" class="char-canvas">
+<span class="canvas-badge" style="background:#064e3b; color:#6ee7b7;">🌱 灵气中枢 · 2.3 亲密模块 (绑定 亲密关照表)</span>
+┌────────────────────────────────────────────────────────┐
+│ ❤️ 亲密关系与温度随手记 (Intimacy & Connection)       │
+├────────────────────────────────────────────────────────┤
+│ 🎂 近期重要关怀与纪念日倒数                            │
+│ ┌────────────────────────────────────────────────────┐ │
+│ │ • 妈妈生日还有 12 天 (10月28日)                     │ │
+│ │   [建议预先规划排程: 选购健康礼物 / 预定聚餐]       │ │
+│ ├────────────────────────────────────────────────────┤ │
+│ │ • 伴侣纪念日: 还有 34 天                           │ │
+│ └────────────────────────────────────────────────────┘ │
+│                                                        │
+│ 📝 亲密随手记 (温度与温存)                             │
+│ ┌────────────────────────────────────────────────────┐ │
+│ │ 2026-10-14 20:30                                   │ │
+│ │ 今天一起散步 40 分钟，聊了关于未来工作站的畅想。     │ │
+│ │ 心情非常平静温暖。                                 │ │
+│ └────────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 2.4 休息模块 -->
+          <div id="canvas-soul-rest" class="char-canvas">
+<span class="canvas-badge" style="background:#064e3b; color:#6ee7b7;">🌱 灵气中枢 · 2.4 休息模块 (绑定 时间记录·睡眠表)</span>
+┌────────────────────────────────────────────────────────┐
+│ 🌙 太极阴阳钟与深度充能 (Rest & Sleep Recharge)        │
+├────────────────────────────────────────────────────────┤
+│                 ╭─────────────╮                        │
+│              ╭──╯   ☯️ 阴阳   ╰──╮                     │
+│              │    太极睡眠环     │                     │
+│              ╰──╮   7.5 小时   ╭──╯                     │
+│                 ╰─────────────╯                        │
+│            昨夜睡眠: 23:30 ~ 07:00 (优质深睡 2.2h)     │
+│                                                        │
+│ 🌬️ 4-7-8 呼吸放松引导台 (即刻能量回血)                 │
+│ • 吸气 (4秒)  ───●──────────                           │
+│ • 屏息 (7秒)  ───────●──────                           │
+│ • 呼气 (8秒)  ────────────●─                           │
+│   [  ▶ 开始 3 分钟正念呼吸引导  ]                      │
+│                                                        │
+│ 休息铁律: 工作虽重，休息不可夺；精力耗尽强撑即是虚耗。  │
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 2.5 灵气待添加插槽 -->
+          <div id="canvas-soul-slot" class="char-canvas">
+<span class="canvas-badge" style="background:#475569; color:#cbd5e1;">🌱 灵气中枢 · 2.5 待添加插槽 (管理文件夹: 20习惯/24纠正)</span>
+┌────────────────────────────────────────────────────────┐
+│ ➕ 灵气修养扩展插槽 (Plugin Slot · 管理文件夹表)        │
+├────────────────────────────────────────────────────────┤
+│ 待接入实体表 1: 20 习惯清单表                          │
+│ • 功能规划: 晨跑、冥想、阅读每日打卡微交互             │
+│ • 状态: 预留习惯画册插槽，待配置字段映射               │
+│                                                        │
+│ 待接入实体表 2: 24 行为纠正表 / 25 专项克服表           │
+│ • 功能规划: 克服拖延点阵、不良习惯破除倒计时           │
+│ • 状态: 预留自省修身插槽                               │
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 3.1 积分模块 -->
+          <div id="canvas-kanban-points" class="char-canvas">
+<span class="canvas-badge" style="background:#78350f; color:#fde68a;">📊 看板中枢 · 3.1 积分模块 (绑定 91 积分原则表)</span>
+┌────────────────────────────────────────────────────────┐
+│ 🏆 成长值与正向反馈中枢 (Points & Milestones)          │
+├────────────────────────────────────────────────────────┤
+│ 当前累计积分: [  340 pt  ]     今日已获得: [  +25 pt  ]│
+│                                                        │
+│ 🎖 成长里程碑勋章墙                                    │
+│ ┌──────────────┐ ┌──────────────┐ ┌──────────────────┐ │
+│ │ 🌟 架构大师   │ │ ⏱ 心流先锋   │ │ 🌙 规律作息      │ │
+│ │ 完成三大中枢 │ │ 累计专注100h │ │ 连续7天早睡      │ │
+│ │ [已解锁 ✓]   │ │ [已解锁 ✓]   │ │ [进度 5/7 天]    │ │
+│ └──────────────┘ └──────────────┘ └──────────────────┘ │
+│                                                        │
+│ 📜 91 积分获取规则 (自动结算)                          │
+│ • 完成一条 P0 吃青蛙行动: +10 pt                        │
+│ • 完成 25 分钟番茄钟深度专注: +5 pt                    │
+│ • 记录 1 次 April 微表情心情: +2 pt                    │
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 3.2 曲线模块 -->
+          <div id="canvas-kanban-curves" class="char-canvas">
+<span class="canvas-badge" style="background:#78350f; color:#fde68a;">📊 看板中枢 · 3.2 曲线模块 (绑定 35 曲线表 / 22 分析表)</span>
+┌────────────────────────────────────────────────────────┐
+│ 📈 趋势轨迹与频率分析 (Trend Curves & Analytics)       │
+├────────────────────────────────────────────────────────┤
+│ 1. 近 7 天专注时长趋势折线 (小时)                       │
+│ 6h ┤          ╭╮                                       │
+│ 4h ┤    ╭╮   ╭╯╰╮                                      │
+│ 2h ┤ ╭──╯╰───╯  ╰─                                     │
+│ 0h ┼─┴──┴──┴──┴──┴──┴──                                │
+│    一  二  三  四  五  六  日                           │
+│                                                        │
+│ 2. 习惯打卡频率热力点阵 (近 4 周)                       │
+│ 编程 ■ ■ ■ ■ ■ ■ ■ (98%)                                │
+│ 阅读 ■ ■ ■ ⬚ ■ ■ ⬚ (71%)                                │
+│ 运动 ■ ⬚ ■ ⬚ ■ ⬚ ■ (57%)                                │
+│ (■ 代表打卡达成，⬚ 代表休整)                            │
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 3.3 自定义全景模块 -->
+          <div id="canvas-kanban-panorama" class="char-canvas">
+<span class="canvas-badge" style="background:#78350f; color:#fde68a;">📊 看板中枢 · 3.3 自定义全景模块 (绑定 90 年度画板配置)</span>
+┌────────────────────────────────────────────────────────┐
+│ 🗺️ 2026 年度全景看板 (365 Days Mosaic Panorama)        │
+├────────────────────────────────────────────────────────┤
+│ 2026 时光流逝进度: [████████████████░░░░] 79.2% (剩余76天)│
+│                                                        │
+│ 365 天像素全景矩阵 (12个月 × 31天，按 CATS 分类着色):   │
+│ 1月 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                    │
+│ 2月 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■                       │
+│ ...                                                    │
+│ 10月 ■■■■■■■■■■■■■■■[■]░░░░░░░░░░░░░░░ (今天: 高能量工作)│
+│                                                        │
+│ 📝 10月16日 当天总结 (四字段):                         │
+│ • 内容: 彻底打通三大中枢业务逻辑与飞书 Base 实体表映射  │
+│ • 分类: [工作]  |  状态: [完成 ✓]                      │
+│ • 备注: 交付全页面文字符 UI 蓝图检视台，架构达到解耦标准│
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 3.4 看板待添加插槽 -->
+          <div id="canvas-kanban-slot" class="char-canvas">
+<span class="canvas-badge" style="background:#475569; color:#cbd5e1;">📊 看板中枢 · 3.4 待添加插槽 (预留: 07复盘表 / 30技能清单)</span>
+┌────────────────────────────────────────────────────────┐
+│ ➕ 看板宏观分析插槽 (Plugin Slot · 复盘分析表区)        │
+├────────────────────────────────────────────────────────┤
+│ 待接入实体表 1: 07 周期复盘表                           │
+│ • 功能规划: 周总结、月复盘、季度战略规划自动化生成     │
+│ • 状态: 预留标准插槽，数据可一键导出 Markdown 笔记     │
+│                                                        │
+│ 待接入实体表 2: 30 技能清单 / 31 刻意练习表            │
+│ • 功能规划: 成为大师成长雷达图、技能树分支点亮机制     │
+│ • 状态: 预留专业技能评估模型插槽                       │
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 4.1 Notion 属性侧拉抽屉 -->
+          <div id="canvas-ov-drawer" class="char-canvas">
+<span class="canvas-badge" style="background:#581c87; color:#e9d5ff;">🪟 全局通用 · 4.1 Notion 属性侧拉抽屉 (Property Drawer)</span>
+┌────────────────────────────────────────────────────────┐
+│ 📑 事项属性抽屉 (Notion Property Drawer)          [ ✕ ] │
+├────────────────────────────────────────────────────────┤
+│ 事项标题: [ 多平台统一新架构开发                     ] │
+│                                                        │
+│ 🏷 板块分类: (CATS 官方 6 色单选)                      │
+│ [● 工作]  [○ 生活]  [○ 运动]  [○ 睡眠]  [○ 学习]  [○ 娱乐]│
+│                                                        │
+│ 🕒 起止时间: 09:00  至  11:30   (动态计算耗时: 2.5 小时)│
+│ 🔄 流转状态: [ 进行中 ▾ ]       🎯 所属中枢: [ ⚡ 效率 ] │
+│                                                        │
+│ 🔗 飞书 Base 跨表 Link 穿透绑定:                       │
+│ • 关联任务: 03任务看板 (rec_8f3a) [查看]               │
+│ • 关联时间: 04时间记录 (rec_91cd) [已生成]             │
+│ • 关联心情: 11快乐数据表 (充实)                        │
+│                                                        │
+│ 📝 详细备忘 Note (支持 Markdown 轻语法):               │
+│ ┌────────────────────────────────────────────────────┐ │
+│ │ • 彻底解耦前端视图与状态机                         │ │
+│ │ • 保持 300ms 本地草稿实时静默存盘                  │ │
+│ └────────────────────────────────────────────────────┘ │
+│                                                        │
+│   [ 🗑️ 软删除排程 ]                   [ ✓ 标记核销完成 ] │
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 4.2 极速新建存稿窗 -->
+          <div id="canvas-ov-create" class="char-canvas">
+<span class="canvas-badge" style="background:#581c87; color:#e9d5ff;">🪟 全局通用 · 4.2 极速新建弹窗 (300ms 本地存稿防丢保护)</span>
+┌────────────────────────────────────────────────────────┐
+│ ✍️ 极速新建事项 (Quick Create)                     [✕] │
+├────────────────────────────────────────────────────────┤
+│ 🛡️ 状态提示: 检测到未完成草稿 (刚刚)  [恢复] [放弃]    │
+├────────────────────────────────────────────────────────┤
+│ 事项名称: [ 阅读北极星架构文档                       ] │
+│ 选择板块: [ 工作 ]  [● 学习]  [ 生活 ]  [ 运动 ]       │
+│ 开始时间: [ 今天 15:00 ]   预估时长: [ 45 分钟 ]        │
+│                                                        │
+│ ⚡ 快捷选项:                                            │
+│ [x] 同步设为今日吃青蛙 (P0)                            │
+│ [x] 开启专注猫咪留声机伴随                             │
+│                                                        │
+│ 输入保障: 任意键入 300ms 内静默存盘，意外刷新零丢失！   │
+│                                                        │
+│   [  取消  ]                         [  立即创建 (Enter) ]│
+└────────────────────────────────────────────────────────┘
+          </div>
+
+          <!-- 4.3 飞书 Base 探针 -->
+          <div id="canvas-ov-sync" class="char-canvas">
+<span class="canvas-badge" style="background:#581c87; color:#e9d5ff;">🪟 全局通用 · 4.3 飞书 Base 状态探针与三通道对账</span>
+┌────────────────────────────────────────────────────────┐
+│ 🔄 飞书 Base 同步与网络状态探针 (Sync Monitor)         │
+├────────────────────────────────────────────────────────┤
+│ 🟢 服务状态: 正常运行中                                │
+│ • 本地端点: http://192.168.1.5:8080                    │
+│ • 飞书 Base Token: SQbpb4osNaAkY7s8UVdcupkYnqe (已授权)│
+│                                                        │
+│ 📊 数据通道状态:                                       │
+│ 1. LocalStorage 本地离线引擎: [ 748 条排程缓存就绪 ✓ ]  │
+│ 2. 局域网服务管道 (serve.js): [ 8080 端口毫秒响应 ✓ ]   │
+│ 3. 飞书 OpenAPI 云端通道:     [ SafeMerge 归并已就绪 ✓ ]│
+│                                                        │
+│ 待推送本地变更: 0 条 (所有数据已最新)                   │
+│                                                        │
+│   [ 立即从飞书拉取最新 (Pull) ]   [ 推送本地变更 (Push) ] │
+└────────────────────────────────────────────────────────┘
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部直达链接 -->
+    <div class="footer-bar">
+      <span>北极星三大中枢全页面字符 UI 蓝图已就绪</span>
+      <div style="display:flex; gap:14px;">
+        <a class="btn-link" href="./download.html">返回下载页</a>
+        <a class="btn-link" href="./schedule.html">排程日程 (Notion版)</a>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // 初始化 Mermaid
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'neutral',
+      themeVariables: {
+        fontFamily: '-apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif',
+        fontSize: '13px',
+        primaryColor: '#fdfcf9',
+        primaryBorderColor: '#d9d4cb',
+        lineColor: '#71767f',
+        tertiaryColor: '#f5f3ed'
+      }
+    });
+
+    // 切换字符线框检视台页面
+    function switchCanvas(id, btn) {
+      document.querySelectorAll('.studio-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      document.querySelectorAll('.char-canvas').forEach(c => c.classList.remove('active'));
+      const target = document.getElementById(`canvas-${id}`);
+      if (target) {
+        target.classList.add('active');
+      }
+    }
+
+    // 切换目录树显示模式 (可视化连线 vs 纯字符 Pre 等宽)
+    function toggleTreeMode(mode) {
+      const btnVisual = document.getElementById('btn-tree-visual');
+      const btnAscii = document.getElementById('btn-tree-ascii');
+      const treeVisual = document.getElementById('tree-mode-visual');
+      const treeAscii = document.getElementById('tree-mode-ascii');
+
+      if (btnVisual && btnAscii && treeVisual && treeAscii) {
+        btnVisual.classList.toggle('active', mode === 'visual');
+        btnAscii.classList.toggle('active', mode === 'ascii');
+        treeVisual.style.display = mode === 'visual' ? 'block' : 'none';
+        treeAscii.style.display = mode === 'ascii' ? 'block' : 'none';
+      }
+    }
+
+    // ===== 全局自由文字编辑引擎 =====
+    let isEditMode = true; // 默认开启自由编辑模式
+    let draftTimer = null;
+
+    // 初始化所有可编辑元素与事件监听
+    function initTextEditor() {
+      const asciiTree = document.getElementById('tree-mode-ascii');
+      const charCanvases = document.querySelectorAll('.char-canvas');
+      const allEditableTargets = [asciiTree, ...charCanvases];
+
+      allEditableTargets.forEach(el => {
+        if (!el) return;
+        el.setAttribute('data-editable', 'true');
+        el.setAttribute('spellcheck', 'false');
+
+        // 输入监听 (防抖自动存盘)
+        el.addEventListener('input', () => {
+          triggerAutoDraft();
+        });
+
+        // 键盘 Tab 键支持 (插入 2 个空格不跳焦)
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'Tab') {
+            e.preventDefault();
+            if (document.queryCommandSupported && document.queryCommandSupported('insertText')) {
+              document.execCommand('insertText', false, '  ');
+            } else {
+              const sel = window.getSelection();
+              if (sel && sel.rangeCount > 0) {
+                const range = sel.getRangeAt(0);
+                range.deleteContents();
+                const textNode = document.createTextNode('  ');
+                range.insertNode(textNode);
+                range.setStartAfter(textNode);
+                range.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(range);
+              }
+            }
+            triggerAutoDraft();
+          }
+        });
+      });
+
+      // 检查是否有本地缓存草稿
+      try {
+        const draftHtml = localStorage.getItem('polaris_architecture_draft');
+        if (draftHtml) {
+          showToast('💡 已激活自由编辑模式，本地已就绪');
+        }
+      } catch (e) {}
+
+      applyEditModeState();
+    }
+
+    // 切换编辑/只读模式
+    function toggleEditMode() {
+      isEditMode = !isEditMode;
+      applyEditModeState();
+      showToast(isEditMode ? '✏️ 编辑模式已开启：可直接点击文字修改' : '🔒 已切换为纯浏览模式 (文字已锁定)');
+    }
+
+    function applyEditModeState() {
+      const btn = document.getElementById('btn-toggle-edit');
+      const toolbar = document.getElementById('editor-toolbar');
+      const editIcon = document.getElementById('edit-icon');
+      const editText = document.getElementById('edit-text');
+      const statusDot = document.getElementById('edit-status-dot');
+      const statusText = document.getElementById('edit-status-text');
+
+      if (btn) btn.classList.toggle('active', isEditMode);
+      if (toolbar) toolbar.classList.toggle('editing', isEditMode);
+      if (editIcon) editIcon.textContent = isEditMode ? '✏️' : '🔒';
+      if (editText) editText.textContent = isEditMode ? '编辑模式: 开启' : '只读浏览模式';
+      if (statusDot) statusDot.className = isEditMode ? 'edit-status-dot active' : 'edit-status-dot';
+      if (statusText) statusText.textContent = isEditMode ? '可直接打字编辑' : '已锁定只读';
+
+      const editables = document.querySelectorAll('[data-editable="true"]');
+      editables.forEach(el => {
+        if (isEditMode) {
+          el.setAttribute('contenteditable', 'plaintext-only');
+        } else {
+          el.removeAttribute('contenteditable');
+        }
+      });
+    }
+
+    // 自动暂存草稿
+    function triggerAutoDraft() {
+      setEditStatus('saving', '正在自动暂存草稿...');
+      clearTimeout(draftTimer);
+      draftTimer = setTimeout(() => {
+        try {
+          localStorage.setItem('polaris_architecture_draft', document.body.innerHTML);
+          setEditStatus('saved', '草稿已实时暂存 (按 Cmd+S 保存文件)');
+        } catch (e) {}
+      }, 400);
+    }
+
+    function setEditStatus(state, text) {
+      const dot = document.getElementById('edit-status-dot');
+      const st = document.getElementById('edit-status-text');
+      if (dot) {
+        dot.className = state === 'saving' ? 'edit-status-dot saving' : 'edit-status-dot active';
+      }
+      if (st) st.textContent = text;
+    }
+
+    // 保存改动至服务器端文件与本地缓存 (Cmd+S / Ctrl+S)
+    async function saveArchitectureChanges() {
+      setEditStatus('saving', '正在写入磁盘文件...');
+
+      // 提取干净的整页 HTML
+      const fullHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+      // 1. 保存到 LocalStorage
+      try {
+        localStorage.setItem('polaris_architecture_saved_html', fullHtml);
+        localStorage.removeItem('polaris_architecture_draft');
+      } catch (e) {}
+
+      // 2. 提交到 Node 本地后端 /api/save-architecture 永久落盘
+      try {
+        const resp = await fetch('/api/save-architecture', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ html: fullHtml })
+        });
+        const res = await resp.json();
+        if (res.ok) {
+          setEditStatus('saved', '已永久保存至磁盘文件 ✓');
+          showToast('💾 ✓ 修改已成功永久写入 architecture.html 文件！');
+        } else {
+          throw new Error(res.error || '写入失败');
+        }
+      } catch (err) {
+        console.warn('API 保存失败，已保存在本地缓存:', err);
+        setEditStatus('saved', '已保存在浏览器本地缓存 ✓');
+        showToast('✓ 已暂存在浏览器本地缓存');
+      }
+    }
+
+    // 复制当前画布或目录树的纯文本内容
+    function copyCurrentCanvasText() {
+      const activeCanvas = document.querySelector('.char-canvas.active');
+      const asciiTree = document.getElementById('tree-mode-ascii');
+      let target = activeCanvas;
+
+      if (asciiTree && asciiTree.style.display !== 'none' && (document.activeElement === asciiTree || window.getSelection().containsNode(asciiTree, true))) {
+        target = asciiTree;
+      }
+      if (!target && activeCanvas) target = activeCanvas;
+
+      if (!target) {
+        showToast('⚠️ 未找到当前聚焦的文本内容');
+        return;
+      }
+
+      const text = target.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('📋 已复制当前字符画板纯文本至剪贴板！');
+      }).catch(() => {
+        showToast('⚠️ 复制失败，请手动选中文本按 Cmd+C');
+      });
+    }
+
+    // 恢复官方初始版本
+    function resetToOriginalTemplate() {
+      if (confirm('确认放弃所有编辑并恢复官方初始版本？\n此操作将清除本地暂存改动。')) {
+        try {
+          localStorage.removeItem('polaris_architecture_draft');
+          localStorage.removeItem('polaris_architecture_saved_html');
+        } catch (e) {}
+        location.reload();
+      }
+    }
+
+    // 显示 Toast 浮层提示
+    function showToast(msg) {
+      let toast = document.getElementById('save-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'save-toast';
+        toast.className = 'save-toast';
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = msg;
+      toast.classList.add('show');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2800);
+    }
+
+    // 全局快捷键监听 (Cmd+S / Ctrl+S)
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveArchitectureChanges();
+      }
+    });
+
+    // 页面加载完成后自动启动编辑器
+    window.addEventListener('DOMContentLoaded', initTextEditor);
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      initTextEditor();
+    }
+  </script>
+</body>
+</html>

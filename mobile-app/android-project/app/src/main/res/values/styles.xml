@@ -1,0 +1,11 @@
+<resources>
+    <style name="Theme.YearCalendarK80" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <!-- 适配全面屏沉浸式状态栏与导航栏 -->
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+</resources>

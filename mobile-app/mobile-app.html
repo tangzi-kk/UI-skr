@@ -1,0 +1,2310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a1e26" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>年度看板 · 专属体验版</title>
+  
+  <link rel="icon" href="./assets/design-elements/badge_star_3d.png" type="image/png" />
+  <link rel="manifest" href="./manifest.json" />
+
+  <!-- 载入所有 33+ 款容器高精样式与悬浮发射器样式 -->
+  <link rel="stylesheet" href="./mobile-style.css" />
+
+  <!-- 载入多维表格数据包与核心状态引擎 -->
+  <script src="./assets/board_data.js"></script>
+  <script src="./polaris-store.js"></script>
+
+  <!-- 引入官方组件库与设计系统 -->
+  <script src="./component-library.js"></script>
+
+  <style>
+    /* ================= 1. 设计系统变量 (4套全局主题) ================= */
+    :root {
+      /* 原木暖纸 (默认) */
+      --theme-phone-bg: #f5ede2;
+      --theme-card-bg: #fffbf5;
+      --theme-card-border: #e6dac8;
+      --theme-text-primary: #2d261e;
+      --theme-text-secondary: #7a6e5d;
+      --theme-text-muted: #a39582;
+      --theme-accent: #c2593f;
+      --theme-accent-soft: rgba(194, 89, 63, 0.12);
+      --theme-status-bar: #3c3226;
+      --theme-card-shadow: 0 4px 16px rgba(60, 40, 20, 0.06);
+    }
+
+    body.theme-dark {
+      --theme-phone-bg: #090a0f;
+      --theme-card-bg: #141721;
+      --theme-card-border: #222738;
+      --theme-text-primary: #f8fafc;
+      --theme-text-secondary: #94a3b8;
+      --theme-text-muted: #64748b;
+      --theme-accent: #38bdf8;
+      --theme-accent-soft: rgba(56, 189, 248, 0.15);
+      --theme-status-bar: #f8fafc;
+      --theme-card-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    }
+
+    body.theme-sage {
+      --theme-phone-bg: #edf3ee;
+      --theme-card-bg: #f8faf8;
+      --theme-card-border: #d4e2d6;
+      --theme-text-primary: #1f3323;
+      --theme-text-secondary: #57705c;
+      --theme-text-muted: #859e8a;
+      --theme-accent: #2e7d32;
+      --theme-accent-soft: rgba(46, 125, 50, 0.12);
+      --theme-status-bar: #1f3323;
+      --theme-card-shadow: 0 4px 16px rgba(30, 60, 35, 0.06);
+    }
+
+    body.theme-nordic {
+      --theme-phone-bg: #f8fafc;
+      --theme-card-bg: #ffffff;
+      --theme-card-border: #e2e8f0;
+      --theme-text-primary: #0f172a;
+      --theme-text-secondary: #64748b;
+      --theme-text-muted: #94a3b8;
+      --theme-accent: #2563eb;
+      --theme-accent-soft: rgba(37, 99, 235, 0.1);
+      --theme-status-bar: #0f172a;
+      --theme-card-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    }
+
+    /* ================= 2. 基础重置与真机视口适配 ================= */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--theme-phone-bg);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", "MIUI", "Noto Sans", sans-serif;
+      color: var(--theme-text-primary);
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* 主机身视口容器 (全屏) */
+    .k80-app-viewport {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 顶部沉浸式状态避让栏 (顶栏胶囊已彻底移除，高度精简) */
+    .k80-header-safe-bar {
+      padding-top: max(14px, env(safe-area-inset-top));
+      padding-left: 16px;
+      padding-right: 16px;
+      padding-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 100;
+      background: linear-gradient(180deg, var(--theme-phone-bg) 85%, transparent);
+    }
+
+    .k80-brand-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--theme-text-primary);
+    }
+
+    .k80-brand-pill .brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--theme-accent);
+      box-shadow: 0 0 8px var(--theme-accent);
+    }
+
+    /* 顶部主题快捷换肤切换胶囊 */
+    .k80-theme-switcher {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(150, 160, 175, 0.12);
+      padding: 3px;
+      border-radius: 16px;
+      backdrop-filter: blur(8px);
+    }
+
+    .theme-mini-chip {
+      padding: 3px 7px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--theme-text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .theme-mini-chip.active {
+      background: var(--theme-card-bg);
+      color: var(--theme-text-primary);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    /* 主内容滚动容器 (顶栏与底栏均已隐藏，全屏让给内容) */
+    .k80-main-stage {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 4px 14px max(32px, calc(env(safe-area-inset-bottom) + 90px));
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transform: translateZ(0);
+      will-change: transform;
+    }
+
+    /* 每一个 Tab 面板视图 */
+    .tab-panel-view {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      animation: tabFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .tab-panel-view.active {
+      display: flex;
+    }
+
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 装饰元素绝对点缀层 */
+    .stage-sticker {
+      position: absolute;
+      pointer-events: none;
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.15));
+      z-index: 15;
+    }
+
+    /* 通用 UI 容器卡片卡槽美化 */
+    .live-ui-card {
+      background: var(--theme-card-bg);
+      border: 1px solid var(--theme-card-border);
+      border-radius: 20px;
+      box-shadow: var(--theme-card-shadow);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .card-unified-header {
+      padding: 12px 14px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-main-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--theme-text-primary);
+    }
+
+    .card-sub-title {
+      font-size: 10px;
+      color: var(--theme-text-muted);
+    }
+
+    .theme-badge-pill {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: var(--theme-accent-soft);
+      color: var(--theme-accent);
+    }
+
+    /* 动态可点击排程胶囊动效 */
+    .interactive-schedule-pill {
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.15s ease;
+    }
+    .interactive-schedule-pill:active {
+      transform: scale(0.94);
+      filter: brightness(0.9);
+    }
+    .interactive-schedule-pill.is-done {
+      opacity: 0.55;
+      text-decoration: line-through;
+    }
+
+    /* 年度日历横向微缩快捷条 */
+    .k80-year-quick-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(150, 160, 180, 0.08);
+      border: 1px solid var(--theme-card-border);
+      border-radius: 16px;
+      padding: 10px 14px;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+    .k80-year-quick-bar strong { color: var(--theme-text-primary); font-weight: 800; }
+    .k80-year-quick-btn {
+      background: var(--theme-accent);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* 输入框通用美化 */
+    .polaris-text-input {
+      width: 100%;
+      background: rgba(150, 160, 180, 0.08);
+      border: 1px solid var(--theme-card-border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--theme-text-primary);
+      outline: none;
+      box-sizing: border-box;
+    }
+    .polaris-text-input:focus {
+      border-color: var(--theme-accent);
+    }
+
+    /* 原生移动端排程卡片与周胶囊条 */
+    .ui-schedule-agenda-card {
+      background: var(--theme-card-bg);
+      border: 1px solid var(--theme-card-border);
+      border-radius: 20px;
+      box-shadow: var(--theme-card-shadow);
+      overflow: hidden;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+    }
+    .agenda-week-bar {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid var(--theme-card-border);
+      gap: 6px;
+    }
+    .agenda-day-pill {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 4px;
+      border-radius: 12px;
+      background: rgba(150, 160, 180, 0.08);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .agenda-day-pill.active {
+      background: var(--theme-text-primary);
+      color: var(--theme-card-bg);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transform: translateY(-1px);
+    }
+    .agenda-day-pill .ad-weekday {
+      font-size: 10px;
+      font-weight: 600;
+      opacity: 0.75;
+    }
+    .agenda-day-pill .ad-date {
+      font-size: 14px;
+      font-weight: 800;
+      margin-top: 2px;
+    }
+    .agenda-timeline-body {
+      padding: 12px;
+      display: flex;
+      gap: 10px;
+      min-height: 200px;
+    }
+    .agenda-time-scale {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--theme-text-muted);
+      width: 38px;
+      border-right: 1px dashed var(--theme-card-border);
+      padding-right: 6px;
+    }
+    .agenda-list-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .agenda-schedule-item {
+      background: rgba(150, 160, 180, 0.06);
+      border: 1px solid var(--theme-card-border);
+      border-left: 4px solid var(--cat-color, #007aff);
+      border-radius: 12px;
+      padding: 9px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .agenda-schedule-item:active {
+      transform: scale(0.98);
+    }
+    .agenda-schedule-item.is-done {
+      opacity: 0.55;
+    }
+    .agenda-schedule-item.is-done .sched-title {
+      text-decoration: line-through;
+    }
+    .sched-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .sched-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--theme-text-primary);
+    }
+    .sched-meta {
+      font-size: 11px;
+      color: var(--theme-text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sched-cat-tag {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+    .sched-check-circle {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--theme-card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .agenda-schedule-item.is-done .sched-check-circle {
+      background: #10b981;
+      border-color: #10b981;
+      color: #fff;
+    }
+    .agenda-empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 160px;
+      color: var(--theme-text-muted);
+      gap: 8px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body class="theme-warm">
+
+  <div class="k80-app-viewport">
+    
+    <!-- 顶部状态栏与多维表格同步微指示 (顶栏胶囊已移除，极致纯净) -->
+    <header class="k80-header-safe-bar">
+      <div class="k80-brand-pill">
+        <span class="brand-dot"></span>
+        <span id="current-tab-title">日程排程</span>
+      </div>
+
+      <!-- 北极星多维表格同步呼吸指示胶囊 -->
+      <div class="k80-sync-badge" id="k80-sync-badge" onclick="openSyncModal()" title="北极星多维表格同步中枢">
+        <span class="sync-dot"></span>
+        <span id="sync-badge-text">已连接飞书</span>
+      </div>
+
+      <div class="k80-theme-switcher">
+        <span class="theme-mini-chip active" onclick="switchTheme('theme-warm', this)">原木</span>
+        <span class="theme-mini-chip" onclick="switchTheme('theme-dark', this)">黑曜</span>
+        <span class="theme-mini-chip" onclick="switchTheme('theme-sage', this)">鼠尾草</span>
+        <span class="theme-mini-chip" onclick="switchTheme('theme-nordic', this)">纯白</span>
+      </div>
+    </header>
+
+    <!-- 主视口阶段 (7 大核心板块，全屏纵深展示) -->
+    <main class="k80-main-stage" id="main-stage">
+      
+      <!-- ================= 1. 【日程】板块 ================= -->
+      <section class="tab-panel-view active" id="tab-schedule">
+        <!-- 2026 年度日历全景微缩导航条 -->
+        <div class="k80-year-quick-bar">
+          <div>
+            <strong>🗓 2026 年度日历</strong> · <span id="k80-week-label">第 40 周</span>
+            <span id="k80-today-sublabel" style="font-size:11px; opacity:0.8; margin-left:4px;">10月04日 今天</span>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="k80-year-quick-btn" onclick="location.href='schedule.html'" style="background:linear-gradient(135deg,#007aff,#5856D6);color:#fff;border-color:transparent;font-weight:700;">五维日程 ↗</button>
+            <button class="k80-year-quick-btn" onclick="switchNavTabDirect('tab-kanban', '年度看板')">365天全景 ↗</button>
+          </div>
+        </div>
+
+        <!-- 五维多视图全功能日程入口横幅 -->
+        <div style="margin: 0 0 12px; padding: 12px 14px; background: linear-gradient(135deg, rgba(0,122,255,0.12), rgba(88,86,214,0.12)); border: 1px solid rgba(0,122,255,0.25); border-radius: 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="location.href='schedule.html'">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:24px;">📅</span>
+            <div>
+              <div style="font-size:13px; font-weight:800; color:var(--k80-accent,#007aff);">全功能五维日程（日·周·月·年·列表）</div>
+              <div style="font-size:11px; opacity:0.75; margin-top:2px;">含 AI 语音速记与北极星三通道同步</div>
+            </div>
+          </div>
+          <button style="border:none; background:#007aff; color:#fff; border-radius:10px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer;">进入 ↗</button>
+        </div>
+
+        <div id="slot-rsuyoy-nl-input"></div>
+
+        <!-- 真实响应式排程中枢 -->
+        <div class="live-ui-card ui-schedule-agenda-card">
+          <div class="agenda-week-bar" id="agenda-week-strip">
+            <!-- 动态填充本周 7 天胶囊 -->
+          </div>
+          <div class="agenda-timeline-body">
+            <div class="agenda-time-scale">
+              <span>09:00</span>
+              <span>12:00</span>
+              <span>15:00</span>
+              <span>18:00</span>
+              <span>21:00</span>
+            </div>
+            <div class="agenda-list-area" id="agenda-schedule-list">
+              <!-- 动态装填当天真实日程卡片 -->
+            </div>
+          </div>
+          <div style="padding: 10px 14px 12px;">
+            <button class="sync-action-btn btn-pull" style="width:100%;" onclick="openAddScheduleModal()">
+              <span>+ 新建日程排程</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="slot-anylog-dock-cards"></div>
+      </section>
+
+      <!-- ================= 2. 【提醒】板块 ================= -->
+      <section class="tab-panel-view" id="tab-reminders">
+        <div id="slot-header-weather"></div>
+        <div id="slot-alarm-list"></div>
+        <div id="slot-priority-todo"></div>
+        <div id="slot-clock-countdown-card"></div>
+      </section>
+
+      <!-- ================= 3. 【心情】板块 ================= -->
+      <section class="tab-panel-view" id="tab-mood">
+        <div id="slot-april-mood"></div>
+        <div id="slot-cat-audio"></div>
+        <div id="slot-bubble-journal"></div>
+        <div id="slot-mood-wheel"></div>
+      </section>
+
+      <!-- ================= 4. 【专注】板块 ================= -->
+      <section class="tab-panel-view" id="tab-focus">
+        <div id="slot-taiji-sleep"></div>
+        <div id="slot-countdown-ring"></div>
+        <div id="slot-breathing-relax"></div>
+      </section>
+
+      <!-- ================= 5. 【看板】板块 (含 频率/统计/复盘/通知 4大子板块) ================= -->
+      <section class="tab-panel-view" id="tab-kanban">
+        
+        <!-- 看板子板块切换分段控制 (Segmented Pills) -->
+        <div class="kanban-segmented-bar">
+          <button class="kanban-seg-pill active" onclick="switchKanbanSub('sub-freq', this)">频率</button>
+          <button class="kanban-seg-pill" onclick="switchKanbanSub('sub-stats', this)">统计</button>
+          <button class="kanban-seg-pill" onclick="switchKanbanSub('sub-review', this)">复盘</button>
+          <button class="kanban-seg-pill" onclick="switchKanbanSub('sub-notif', this)">通知</button>
+        </div>
+
+        <!-- 子板块 1: 频率 -->
+        <div class="kanban-sub-panel active" id="sub-freq">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:4px;">
+            <button class="k80-year-quick-btn" onclick="openAddHabitModal()">+ 新建习惯</button>
+          </div>
+          <div id="slot-kanban-habit-freq"></div>
+          <div id="slot-kanban-month-heatmap"></div>
+        </div>
+
+        <!-- 子板块 2: 统计 -->
+        <div class="kanban-sub-panel" id="sub-stats">
+          <div id="slot-kanban-year-progress"></div>
+          <div id="slot-kanban-year-mosaic"></div>
+          <div id="slot-kanban-quarter-quadrant"></div>
+        </div>
+
+        <!-- 子板块 3: 复盘 -->
+        <div class="kanban-sub-panel" id="sub-review">
+          <div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:4px;">
+            <button class="k80-year-quick-btn" onclick="saveReviewContent()">保存复盘</button>
+            <button class="k80-year-quick-btn" style="background:#059669;" onclick="exportReviewCard()">导出卡片</button>
+          </div>
+          <div id="slot-kanban-annual-review"></div>
+          <div id="slot-kanban-spring-letter"></div>
+          <div id="slot-kanban-circle-cal"></div>
+        </div>
+
+        <!-- 子板块 4: 通知 -->
+        <div class="kanban-sub-panel" id="sub-notif">
+          <div id="slot-kanban-smart-notif"></div>
+          <div id="slot-kanban-pet-capsule"></div>
+          <div class="pet-interactive-bar">
+            <button class="pet-action-btn" onclick="petInteract('feed')">喂食小饼干 🍪</button>
+            <button class="pet-action-btn" onclick="petInteract('pet')">温柔抚摸 🐾</button>
+            <button class="pet-action-btn" onclick="petInteract('chat')">心语对话 💬</button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= 6. 【想法】板块 ================= -->
+      <section class="tab-panel-view" id="tab-ideas">
+        <div style="display:flex; justify-content:flex-end; margin-bottom:4px;">
+          <button class="k80-year-quick-btn" onclick="openAddMemoModal()">+ 记个想法</button>
+        </div>
+        <div id="slot-ideas-scratchpad"></div>
+        <div id="slot-stationery-tray"></div>
+      </section>
+
+      <!-- ================= 7. 【行动】板块 ================= -->
+      <section class="tab-panel-view" id="tab-actions">
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:4px;">
+          <button class="k80-year-quick-btn" onclick="openAddActionModal()">+ 新建行动</button>
+          <button class="k80-year-quick-btn" style="background:#64748b;" onclick="clearDoneActions()">清理已完成</button>
+        </div>
+        <div id="slot-actions-gtd"></div>
+        <div id="slot-three-things"></div>
+      </section>
+
+    </main>
+
+    <!-- ================= 北极星多模交互悬浮中枢 (FAB) ================= -->
+    <!-- 单击：展开/收起 7 大板块抽屉；长按 450ms：极速闪念速记；双击：飞书双向极速同步；拖拽：贴边停靠 -->
+    <div class="adhd-fab-trigger" id="adhd-fab" title="北极星中枢：单击切换·长按速记·双击同步·支持拖拽">
+      <div class="fab-charge-ring"></div>
+      <div class="fab-pulse-ripple"></div>
+      <span class="fab-star-icon">✦</span>
+    </div>
+
+    <!-- 全景毛玻璃呼出抽屉面板 (7 大板块直达与速记) -->
+    <div class="adhd-launcher-overlay" id="adhd-launcher" onclick="handleOverlayClick(event)">
+      <div class="adhd-launcher-sheet" onclick="event.stopPropagation()">
+        <div class="adhd-sheet-drag-handle"></div>
+
+        <!-- 零摩擦速记输入条 -->
+        <div class="adhd-quick-capture-box">
+          <input type="text" id="adhd-quick-input" placeholder="✨ 随时捕捉一个灵感、闪念或行动..." onkeydown="handleQuickKey(event)" />
+          <button onclick="submitQuickCapture()">速记</button>
+        </div>
+
+        <!-- 7 大板块全景矩阵卡片 -->
+        <div class="adhd-grid-menu">
+          <div class="adhd-menu-card active" data-tab="tab-schedule" onclick="launchTab('tab-schedule', '日程排程')">
+            <span class="menu-icon">📅</span>
+            <span class="menu-title">日程</span>
+          </div>
+          <div class="adhd-menu-card" data-tab="tab-reminders" onclick="launchTab('tab-reminders', '提醒闹钟')">
+            <span class="menu-icon">🔔</span>
+            <span class="menu-title">提醒</span>
+          </div>
+          <div class="adhd-menu-card" data-tab="tab-mood" onclick="launchTab('tab-mood', '心情气象')">
+            <span class="menu-icon">😊</span>
+            <span class="menu-title">心情</span>
+          </div>
+          <div class="adhd-menu-card" data-tab="tab-focus" onclick="launchTab('tab-focus', '专注时空')">
+            <span class="menu-icon">⏳</span>
+            <span class="menu-title">专注</span>
+          </div>
+          <div class="adhd-menu-card" data-tab="tab-kanban" onclick="launchTab('tab-kanban', '年度看板')">
+            <span class="menu-icon">📊</span>
+            <span class="menu-title">看板</span>
+          </div>
+          <div class="adhd-menu-card" data-tab="tab-ideas" onclick="launchTab('tab-ideas', '灵感便笺')">
+            <span class="menu-icon">💡</span>
+            <span class="menu-title">想法</span>
+          </div>
+          <div class="adhd-menu-card" data-tab="tab-actions" onclick="launchTab('tab-actions', '即刻行动')">
+            <span class="menu-icon">⚡</span>
+            <span class="menu-title">行动</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 全局弹窗 1：多维表格双向同步中枢 ================= -->
+    <div class="polaris-modal-overlay" id="sync-modal" onclick="closeSyncModal(event)">
+      <div class="polaris-modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-header-row">
+          <div class="modal-header-title">
+            <span>⚡</span>
+            <span>北极星多维表格同步中枢</span>
+          </div>
+          <button class="modal-close-btn" onclick="closeSyncModal()">✕</button>
+        </div>
+
+        <div class="sync-card-info-box">
+          <div class="sync-info-item">
+            <span class="sync-info-label">绑定的多维表格:</span>
+            <span class="sync-info-val">北极星执行系统</span>
+          </div>
+          <div class="sync-info-item">
+            <span class="sync-info-label">表格唯一标识:</span>
+            <span class="sync-info-val" style="font-family:monospace; font-size:11px;">SQbpb4os...</span>
+          </div>
+          <div class="sync-info-item">
+            <span class="sync-info-label">电脑局域网服务:</span>
+            <span class="sync-info-val" style="font-family:monospace;">192.168.1.8:8080</span>
+          </div>
+          <div class="sync-info-item">
+            <span class="sync-info-label">本地排程数据量:</span>
+            <span class="sync-info-val" id="sync-local-count">705 条</span>
+          </div>
+          <div class="sync-info-item">
+            <span class="sync-info-label">待同步离线变更:</span>
+            <span class="sync-info-val" id="sync-pending-count" style="color:var(--theme-accent);">0 条</span>
+          </div>
+          <div class="sync-info-item">
+            <span class="sync-info-label">最近成功同步:</span>
+            <span class="sync-info-val" id="sync-last-time">刚刚</span>
+          </div>
+        </div>
+
+        <div class="sync-actions-row">
+          <button class="sync-action-btn btn-pull" onclick="handlePullFromFeishu()">
+            <span style="font-size:16px;">⬇️</span>
+            <span>从飞书拉取排程</span>
+          </button>
+          <button class="sync-action-btn btn-push" onclick="handlePushToFeishu()">
+            <span style="font-size:16px;">⬆️</span>
+            <span>推送本地修改</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 全局弹窗 2：日程排程详情与操作 ================= -->
+    <div class="polaris-modal-overlay" id="schedule-modal" onclick="closeScheduleModal(event)">
+      <div class="polaris-modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-header-row">
+          <div class="modal-header-title">
+            <span>🗓</span>
+            <span id="sched-modal-title">日程排程详情</span>
+          </div>
+          <button class="modal-close-btn" onclick="closeScheduleModal()">✕</button>
+        </div>
+
+        <div class="sync-card-info-box">
+          <div class="sync-info-item">
+            <span class="sync-info-label">排程事项:</span>
+            <span class="sync-info-val" id="sched-detail-name">排程名称</span>
+          </div>
+          <div class="sync-info-item">
+            <span class="sync-info-label">排程时间:</span>
+            <span class="sync-info-val" id="sched-detail-time">10:00 - 11:30</span>
+          </div>
+          <div class="sync-info-item">
+            <span class="sync-info-label">所属板块:</span>
+            <span class="sync-info-val" id="sched-detail-cat">工作</span>
+          </div>
+          <div class="sync-info-item">
+            <span class="sync-info-label">完成状态:</span>
+            <span class="sync-info-val" id="sched-detail-status">未完成</span>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:6px;">
+          <button class="sync-action-btn btn-push" style="flex:1;" onclick="handleToggleScheduleDone()">
+            <span id="sched-toggle-btn-txt">标记为已完成 ✓</span>
+          </button>
+          <button class="sync-action-btn" style="flex:0.6; background:#ef4444; color:#fff;" onclick="handleDeleteSchedule()">
+            <span>删除排程</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 全局弹窗 3：41 款微表情打卡选择抽屉 ================= -->
+    <div class="polaris-modal-overlay" id="emoji-modal" onclick="closeEmojiModal(event)">
+      <div class="polaris-modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-header-row">
+          <div class="modal-header-title">
+            <span>😊</span>
+            <span>选择今日心情微表情</span>
+          </div>
+          <button class="modal-close-btn" onclick="closeEmojiModal()">✕</button>
+        </div>
+
+        <p style="font-size:11px; color:var(--theme-text-muted);">
+          点击选择此时此刻的情绪微表情，将即刻贴在今日日历上并同步北极星系统：
+        </p>
+
+        <div class="emoji-picker-grid" id="emoji-picker-list">
+          <!-- 动态装填表情列表 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 全局弹窗 4：新建排程弹窗 ================= -->
+    <div class="polaris-modal-overlay" id="add-schedule-modal" onclick="closeAddScheduleModal(event)">
+      <div class="polaris-modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-header-row">
+          <div class="modal-header-title">
+            <span>➕</span>
+            <span>新建日程排程</span>
+          </div>
+          <button class="modal-close-btn" onclick="closeAddScheduleModal()">✕</button>
+        </div>
+
+        <input type="text" id="new-sched-title" class="polaris-text-input" placeholder="输入日程标题，如：团队周例会..." />
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <div>
+            <label style="font-size:11px; color:var(--theme-text-muted);">开始时间</label>
+            <input type="time" id="new-sched-start" class="polaris-text-input" value="09:00" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:var(--theme-text-muted);">结束时间</label>
+            <input type="time" id="new-sched-end" class="polaris-text-input" value="10:00" />
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size:11px; color:var(--theme-text-muted);">所属分类</label>
+          <select id="new-sched-cat" class="polaris-text-input" style="cursor:pointer;">
+            <option value="工作">💼 工作</option>
+            <option value="生活">🏠 生活</option>
+            <option value="运动">🏃 运动</option>
+            <option value="学习">📚 学习</option>
+            <option value="睡眠">🌙 睡眠</option>
+            <option value="娱乐">🎮 娱乐</option>
+          </select>
+        </div>
+
+        <button class="sync-action-btn btn-pull" style="width:100%;" onclick="submitAddSchedule()">
+          <span>确认添加并排程</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= 全局弹窗 5：新建习惯弹窗 ================= -->
+    <div class="polaris-modal-overlay" id="add-habit-modal" onclick="closeAddHabitModal(event)">
+      <div class="polaris-modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-header-row">
+          <div class="modal-header-title">
+            <span>🌱</span>
+            <span>新建打卡微习惯</span>
+          </div>
+          <button class="modal-close-btn" onclick="closeAddHabitModal()">✕</button>
+        </div>
+
+        <input type="text" id="new-habit-name" class="polaris-text-input" placeholder="如：每日晨跑 3公里、阅读 20分钟..." />
+        
+        <div style="display:flex; gap:10px; align-items:center;">
+          <label style="font-size:11px; color:var(--theme-text-muted);">图标</label>
+          <input type="text" id="new-habit-icon" class="polaris-text-input" style="width:60px; text-align:center;" value="🏃" />
+        </div>
+
+        <button class="sync-action-btn btn-pull" style="width:100%;" onclick="submitAddHabit()">
+          <span>开启新习惯连击</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= 全局弹窗 6：便笺速写颜色选择弹窗 ================= -->
+    <div class="polaris-modal-overlay" id="add-memo-modal" onclick="closeAddMemoModal(event)">
+      <div class="polaris-modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-header-row">
+          <div class="modal-header-title">
+            <span>✏️</span>
+            <span>新建灵感便笺</span>
+          </div>
+          <button class="modal-close-btn" onclick="closeAddMemoModal()">✕</button>
+        </div>
+
+        <textarea id="new-memo-text" class="polaris-text-input" style="height:90px; resize:none;" placeholder="记录下灵感闪念..."></textarea>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:11px; color:var(--theme-text-muted);">手账纸色</span>
+          <div class="memo-color-picker-row">
+            <span class="color-circle c-yellow active" onclick="selectMemoColor('yellow', this)"></span>
+            <span class="color-circle c-blue" onclick="selectMemoColor('blue', this)"></span>
+            <span class="color-circle c-green" onclick="selectMemoColor('green', this)"></span>
+            <span class="color-circle c-pink" onclick="selectMemoColor('pink', this)"></span>
+          </div>
+        </div>
+
+        <button class="sync-action-btn btn-push" style="width:100%;" onclick="submitAddMemo()">
+          <span>贴在便笺墙</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= 全局弹窗 7：语音速记拟物弹窗 ================= -->
+    <div class="polaris-modal-overlay" id="voice-modal" onclick="closeVoiceModal(event)">
+      <div class="polaris-modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-header-row">
+          <div class="modal-header-title">
+            <span>🎙️</span>
+            <span>语音智能排程识别</span>
+          </div>
+          <button class="modal-close-btn" onclick="closeVoiceModal()">✕</button>
+        </div>
+
+        <div class="voice-wave-modal">
+          <div class="voice-waves-row">
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+          </div>
+          <p id="voice-status-text" style="font-size:12px; font-weight:700; color:var(--theme-text-primary);">
+            正在聆听您的自然语言输入...
+          </p>
+        </div>
+
+        <button class="sync-action-btn btn-pull" style="width:100%;" onclick="simulateVoiceFinish()">
+          <span>模拟识别并录入</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= 全局弹窗 8：高级设置菜单 ================= -->
+    <div class="polaris-modal-overlay" id="settings-modal" onclick="closeSettingsModal(event)">
+      <div class="polaris-modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-header-row">
+          <div class="modal-header-title">
+            <span>⚙️</span>
+            <span>排程偏好与选项</span>
+          </div>
+          <button class="modal-close-btn" onclick="closeSettingsModal()">✕</button>
+        </div>
+
+        <div class="sync-card-info-box">
+          <div class="sync-info-item">
+            <span>触感反馈震动</span>
+            <button class="k80-year-quick-btn" onclick="toggleHaptics(this)">已开启</button>
+          </div>
+          <div class="sync-info-item">
+            <span>默认专注时长</span>
+            <span class="sync-info-val">25 分钟</span>
+          </div>
+          <div class="sync-info-item">
+            <span>提前提醒闹钟</span>
+            <span class="sync-info-val">提前 10 分钟</span>
+          </div>
+          <div class="sync-info-item">
+            <span>白噪音默认音量</span>
+            <span class="sync-info-val" id="settings-vol-text">15%</span>
+          </div>
+        </div>
+
+        <button class="sync-action-btn btn-push" style="width:100%;" onclick="closeSettingsModal()">
+          <span>完成偏好设置</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= 全局弹窗 7：新建吃青蛙行动弹窗 ================= -->
+    <div class="polaris-modal-overlay" id="add-action-modal" onclick="closeAddActionModal(event)">
+      <div class="polaris-modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-header-row">
+          <div class="modal-header-title">
+            <span>🐸</span>
+            <span>新建吃青蛙行动</span>
+          </div>
+          <button class="modal-close-btn" onclick="closeAddActionModal()">✕</button>
+        </div>
+
+        <input type="text" id="new-action-title" class="polaris-text-input" placeholder="输入要击破的核心行动或任务..." />
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+          <div>
+            <label style="font-size:11px; color:var(--theme-text-muted);">优先级</label>
+            <select id="new-action-priority" class="polaris-text-input" style="cursor:pointer;">
+              <option value="P0">🔥 P0 核心青蛙</option>
+              <option value="P1">⚡ P1 重要推进</option>
+              <option value="P2">🌱 P2 日常微任务</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px; color:var(--theme-text-muted);">预计时间</label>
+            <select id="new-action-time" class="polaris-text-input" style="cursor:pointer;">
+              <option value="今日">今日必达</option>
+              <option value="上午">今天上午</option>
+              <option value="下午">今天下午</option>
+              <option value="明天">明天推进</option>
+              <option value="本周">本周锁定</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="sync-action-btn btn-pull" style="width:100%; margin-top:12px;" onclick="submitAddAction()">
+          <span>确认添加行动 🐸</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ================= 1. 组件挂载与基础布局 =================
+    function mountComponent(slotId, compId) {
+      const el = document.getElementById(slotId);
+      if (!el) return;
+      const comp = UI_CONTAINERS.find(c => c.id === compId);
+      if (comp) {
+        el.innerHTML = comp.renderHtml(`k80-${slotId}`);
+      }
+    }
+
+    function initK80Slots() {
+      // 1. 【日程】板块
+      mountComponent('slot-rsuyoy-nl-input', 'ui_11_natural_language_bar');
+      mountComponent('slot-anylog-dock-cards', 'ui_anylog_double_card');
+
+      // 2. 【提醒】板块
+      mountComponent('slot-header-weather', 'ui_04_header_info');
+      mountComponent('slot-alarm-list', 'ui_04_alarm_list');
+      mountComponent('slot-priority-todo', 'ui_priority_todo_card');
+      mountComponent('slot-clock-countdown-card', 'ui_04_countdown_card');
+
+      // 3. 【心情】板块
+      mountComponent('slot-april-mood', 'ui_april_mood_cal');
+      mountComponent('slot-cat-audio', 'ui_12_cat_audio_console');
+      mountComponent('slot-bubble-journal', 'ui_bubble_journal_card');
+      mountComponent('slot-mood-wheel', 'ui_mood_wheel_arc');
+
+      // 4. 【专注】板块
+      mountComponent('slot-taiji-sleep', 'ui_01_taiji_sleep_clock');
+      mountComponent('slot-countdown-ring', 'ui_06_ring_digit_countdown');
+      mountComponent('slot-breathing-relax', 'ui_01_breathing_relax_card');
+
+      // 5. 【看板】子板块：频率
+      mountComponent('slot-kanban-habit-freq', 'ui_kanban_habit_freq');
+      mountComponent('slot-kanban-month-heatmap', 'ui_month_heatmap_card');
+
+      // 5. 【看板】子板块：统计
+      mountComponent('slot-kanban-year-progress', 'ui_year_progress_bar');
+      mountComponent('slot-kanban-year-mosaic', 'ui_year_mosaic_grid');
+      mountComponent('slot-kanban-quarter-quadrant', 'ui_quarter_quadrant');
+
+      // 5. 【看板】子板块：复盘
+      mountComponent('slot-kanban-annual-review', 'ui_kanban_annual_review');
+      mountComponent('slot-kanban-spring-letter', 'ui_spring_letter_card');
+      mountComponent('slot-kanban-circle-cal', 'ui_01_circle_month_cal_card');
+
+      // 5. 【看板】子板块：通知
+      mountComponent('slot-kanban-smart-notif', 'ui_kanban_smart_notif');
+      mountComponent('slot-kanban-pet-capsule', 'ui_pet_capsule_dock');
+
+      // 6. 【想法】板块
+      mountComponent('slot-ideas-scratchpad', 'ui_ideas_scratchpad');
+      mountComponent('slot-stationery-tray', 'ui_02_stationery_dock');
+
+      // 7. 【行动】板块
+      mountComponent('slot-actions-gtd', 'ui_actions_gtd_matrix');
+      mountComponent('slot-three-things', 'ui_today_three_things');
+    }
+
+    // ================= 2. 7 大板块与看板子板块切换 =================
+    function switchNavTabDirect(tabId, title) {
+      hapticFeedback(25);
+      document.querySelectorAll('.tab-panel-view').forEach(p => p.classList.remove('active'));
+      const activePanel = document.getElementById(tabId);
+      if (activePanel) activePanel.classList.add('active');
+
+      document.querySelectorAll('.adhd-menu-card').forEach(m => {
+        m.classList.toggle('active', m.getAttribute('data-tab') === tabId);
+      });
+
+      document.getElementById('current-tab-title').innerText = title;
+      document.getElementById('main-stage').scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function switchKanbanSub(subId, pill) {
+      hapticFeedback(20);
+      document.querySelectorAll('.kanban-seg-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+
+      document.querySelectorAll('.kanban-sub-panel').forEach(p => p.classList.remove('active'));
+      const targetSub = document.getElementById(subId);
+      if (targetSub) targetSub.classList.add('active');
+    }
+
+    // ================= 3. 北极星悬浮中枢多模手势体系 (单击/长按/双击/拖拽) =================
+    let fabTouchStartX = 0;
+    let fabTouchStartY = 0;
+    let fabTouchStartTime = 0;
+    let fabLongPressTimer = null;
+    let fabHasLongPressed = false;
+    let fabIsDragging = false;
+    let fabLastTapTime = 0;
+    let fabSingleTapTimeout = null;
+
+    function initFabGestures() {
+      const fab = document.getElementById('adhd-fab');
+      if (!fab) return;
+
+      // 触摸事件 (真机端)
+      fab.addEventListener('touchstart', onFabTouchStart, { passive: false });
+      window.addEventListener('touchmove', onFabTouchMove, { passive: false });
+      window.addEventListener('touchend', onFabTouchEnd, { passive: false });
+
+      // 鼠标事件 (电脑端兼容)
+      fab.addEventListener('mousedown', onFabMouseDown);
+      window.addEventListener('mousemove', onFabMouseMove);
+      window.addEventListener('mouseup', onFabMouseUp);
+    }
+
+    function onFabTouchStart(e) {
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      startFabPress(touch.clientX, touch.clientY);
+    }
+
+    function onFabMouseDown(e) {
+      startFabPress(e.clientX, e.clientY);
+    }
+
+    function startFabPress(clientX, clientY) {
+      const fab = document.getElementById('adhd-fab');
+      fabTouchStartX = clientX;
+      fabTouchStartY = clientY;
+      fabTouchStartTime = Date.now();
+      fabHasLongPressed = false;
+      fabIsDragging = false;
+
+      // 触发充能外环动画与轻微触感
+      fab.classList.add('charging');
+      hapticFeedback(15);
+
+      // 450ms 蓄力判定为长按 -> 极速呼出闪念速记
+      clearTimeout(fabLongPressTimer);
+      fabLongPressTimer = setTimeout(() => {
+        fabHasLongPressed = true;
+        fab.classList.remove('charging');
+        triggerFabLongPress();
+      }, 450);
+    }
+
+    function onFabTouchMove(e) {
+      if (!fabTouchStartTime) return;
+      const touch = e.touches[0];
+      handleFabMove(touch.clientX, touch.clientY, e);
+    }
+
+    function onFabMouseMove(e) {
+      if (!fabTouchStartTime) return;
+      handleFabMove(e.clientX, e.clientY, e);
+    }
+
+    function handleFabMove(clientX, clientY, e) {
+      const dx = clientX - fabTouchStartX;
+      const dy = clientY - fabTouchStartY;
+      const dist = Math.hypot(dx, dy);
+
+      // 移动超过 10px 则判定为拖拽意图，取消长按蓄力
+      if (dist > 10) {
+        clearTimeout(fabLongPressTimer);
+        const fab = document.getElementById('adhd-fab');
+        fab.classList.remove('charging');
+
+        // 判定进入拖拽模式
+        if (dist > 16) {
+          fabIsDragging = true;
+          fab.classList.add('dragging');
+          if (e.cancelable) e.preventDefault();
+
+          // 跟随手指移动
+          const newY = Math.max(80, Math.min(window.innerHeight - 100, clientY - 30));
+          fab.style.bottom = 'auto';
+          fab.style.top = newY + 'px';
+        }
+      }
+    }
+
+    function onFabTouchEnd(e) {
+      endFabPress();
+    }
+
+    function onFabMouseUp(e) {
+      endFabPress();
+    }
+
+    function endFabPress() {
+      if (!fabTouchStartTime) return;
+      clearTimeout(fabLongPressTimer);
+      const fab = document.getElementById('adhd-fab');
+      fab.classList.remove('charging');
+
+      // 若拖拽结束 -> 自适应贴边停靠
+      if (fabIsDragging) {
+        fab.classList.remove('dragging');
+        fabIsDragging = false;
+        snapFabToEdge();
+        fabTouchStartTime = 0;
+        return;
+      }
+
+      // 若长按已触发完毕，松手不执行点击
+      if (fabHasLongPressed) {
+        fabTouchStartTime = 0;
+        return;
+      }
+
+      // 未拖拽且未长按 -> 单击或双击判定
+      const now = Date.now();
+      const timeSinceLastTap = now - fabLastTapTime;
+
+      if (timeSinceLastTap < 280) {
+        // 双击成立 (Double Tap)
+        clearTimeout(fabSingleTapTimeout);
+        triggerFabDoubleTap();
+        fabLastTapTime = 0;
+      } else {
+        // 单击成立 (Single Tap)
+        fabLastTapTime = now;
+        fabSingleTapTimeout = setTimeout(() => {
+          triggerFabSingleTap();
+        }, 280);
+      }
+
+      fabTouchStartTime = 0;
+    }
+
+    // 拖拽松手后贴边吸附
+    function snapFabToEdge() {
+      const fab = document.getElementById('adhd-fab');
+      const rect = fab.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+
+      hapticFeedback(25);
+      if (centerX < window.innerWidth / 2) {
+        fab.style.left = '18px';
+        fab.style.right = 'auto';
+      } else {
+        fab.style.right = '18px';
+        fab.style.left = 'auto';
+      }
+    }
+
+    // 手势 1：单击（轻触）-> 展开 7 大板块全景矩阵抽屉
+    function triggerFabSingleTap() {
+      toggleFabLauncher();
+    }
+
+    // 手势 2：长按 450ms -> 极速直达闪念速记（跳过菜单，直接弹起键盘）
+    function triggerFabLongPress() {
+      const fab = document.getElementById('adhd-fab');
+      fab.classList.add('rippling');
+      setTimeout(() => fab.classList.remove('rippling'), 500);
+
+      hapticFeedback(65); // 强微触感
+
+      // 打开抽屉并立即聚焦速记输入框
+      const launcher = document.getElementById('adhd-launcher');
+      launcher.classList.add('open');
+      fab.classList.add('open');
+
+      const input = document.getElementById('adhd-quick-input');
+      setTimeout(() => {
+        input?.focus();
+      }, 100);
+
+      showToast('⚡ 已长按唤醒：极速闪念速记');
+    }
+
+    // 手势 3：双击 -> 极速触发飞书多维表格双向同步
+    function triggerFabDoubleTap() {
+      const fab = document.getElementById('adhd-fab');
+      fab.classList.add('sync-spin');
+      setTimeout(() => fab.classList.remove('sync-spin'), 850);
+
+      hapticFeedback(40);
+      setTimeout(() => hapticFeedback(40), 120);
+
+      showToast('⚡ 双击触发：极速双向同步多维表格...');
+      handlePullFromFeishu();
+    }
+
+    // 抽屉开关
+    function toggleFabLauncher() {
+      hapticFeedback(30);
+      const fab = document.getElementById('adhd-fab');
+      const launcher = document.getElementById('adhd-launcher');
+      const isOpen = launcher.classList.contains('open');
+
+      if (isOpen) {
+        launcher.classList.remove('open');
+        fab.classList.remove('open');
+      } else {
+        launcher.classList.add('open');
+        fab.classList.add('open');
+        setTimeout(() => {
+          document.getElementById('adhd-quick-input')?.focus();
+        }, 150);
+      }
+    }
+
+    function handleOverlayClick(event) {
+      toggleFabLauncher();
+    }
+
+    function launchTab(tabId, title) {
+      switchNavTabDirect(tabId, title);
+      toggleFabLauncher();
+    }
+
+    function submitQuickCapture() {
+      const input = document.getElementById('adhd-quick-input');
+      const val = input.value.trim();
+      if (!val) return;
+
+      hapticFeedback(50);
+      input.value = '';
+      toggleFabLauncher();
+
+      if (window.polarisStore) {
+        window.polarisStore.addIdea(val);
+      }
+      showToast(`已闪念捕捉：「${val.slice(0, 10)}...」✨`);
+    }
+
+    function handleQuickKey(e) {
+      if (e.key === 'Enter') submitQuickCapture();
+    }
+
+    // ================= 4. 全局主题切换与吐司 =================
+    function switchTheme(themeClass, chip) {
+      hapticFeedback(30);
+      document.body.className = themeClass;
+      document.querySelectorAll('.theme-mini-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      showToast(`已切换为【${chip.innerText}】主题`);
+    }
+
+    function showToast(msg) {
+      const toast = document.createElement('div');
+      toast.className = 'canvas-live-toast';
+      toast.innerText = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 1600);
+    }
+
+    let hapticsEnabled = true;
+    function hapticFeedback(ms = 25) {
+      if (hapticsEnabled && navigator.vibrate) {
+        try { navigator.vibrate(ms); } catch (e) {}
+      }
+    }
+
+    function toggleHaptics(btn) {
+      hapticsEnabled = !hapticsEnabled;
+      btn.innerText = hapticsEnabled ? '已开启' : '已关闭';
+      showToast(`触感反馈：${btn.innerText}`);
+    }
+
+    // ================= 5. 局域网实时遥测发射器 =================
+    function sendLanLog(type, msg) {
+      try {
+        fetch('http://192.168.1.8:8089/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: `[WEB_${type}] ` + msg
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    window.addEventListener('error', (e) => {
+      sendLanLog('JS_ERROR', `${e.message} at ${e.filename}:${e.lineno}`);
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      sendLanLog('PROMISE_REJECT', e.reason?.toString() || 'unknown');
+    });
+
+    // ================= 6. 北极星执行系统 · 真实数据绑定与全面交互 =================
+    let currentActiveSchedule = null;
+    let currentSelectedDate = '';
+    let focusTimer = null;
+    let focusSecondsLeft = 25 * 60;
+    let isFocusing = false;
+    let audioCtx = null;
+    let whiteNoiseNode = null;
+    let gainNode = null;
+    let isAudioPlaying = false;
+    let selectedMemoColor = 'yellow';
+    let appUsageCount = 2;
+    let coffeeCount = 1;
+
+    // 常用微表情清单 (全中文名称)
+    const EMOJI_PALETTE = [
+      { id: 'mooda_classic_02_feichangbang.png', name: '超棒' },
+      { id: 'mooda_classic_06_kaixin.png', name: '开心' },
+      { id: 'mooda_classic_04_pingjing.png', name: '平静' },
+      { id: 'mooda_classic_03_lei.png', name: '好累' },
+      { id: 'mooda_classic_05_nanguo.png', name: '难过' },
+      { id: 'mooda_classic_07_jiaolv.png', name: '焦虑' },
+      { id: 'mooda_dress_06_yuyue.png', name: '愉悦' },
+      { id: 'mooda_dress_03_wink.png', name: '眨眼' },
+      { id: 'mooda_dress_14_fadai.png', name: '发呆' },
+      { id: 'capsule_pet_05_chaokaixin.png', name: '元气' },
+      { id: 'capsule_pet_04_kaixin.png', name: '欢喜' },
+      { id: 'capsule_pet_03_fangkong.png', name: '放空' },
+      { id: 'wheel_03_smile_dingbu.png', name: '微笑' },
+      { id: 'classic_08_jingxi.png', name: '惊喜' },
+      { id: 'mooda_07_aileaile.png', name: '爱了' },
+      { id: 'capsule_elephant_04_kaixin.png', name: '憨喜' },
+      { id: 'mooda_dress_10_hahahh.png', name: '大笑' },
+      { id: 'capsule_01_qifen.png', name: '气愤' }
+    ];
+
+    const CATEGORY_COLORS = {
+      '工作': '#007aff',
+      '生活': '#34c759',
+      '运动': '#ff9500',
+      '睡眠': '#5856d6',
+      '学习': '#af52de',
+      '娱乐': '#ff2d55'
+    };
+
+    function updateDateHeader(targetDateStr) {
+      const target = targetDateStr || (window.polarisStore ? window.polarisStore.getTodayDateStr() : '2026-10-04');
+      const d = new Date(target + 'T00:00:00');
+      const m = d.getMonth() + 1;
+      const day = d.getDate();
+      const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      const weekDay = weekDays[d.getDay()];
+
+      const firstDayOfYear = new Date(d.getFullYear(), 0, 1);
+      const pastDaysOfYear = (d - firstDayOfYear) / 86400000;
+      const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+
+      const weekEl = document.getElementById('k80-week-label');
+      if (weekEl) weekEl.innerText = `第 ${weekNum} 周`;
+      const subEl = document.getElementById('k80-today-sublabel');
+      if (subEl) {
+        const isToday = window.polarisStore ? (target === window.polarisStore.getTodayDateStr()) : false;
+        subEl.innerText = `${m}月${String(day).padStart(2, '0')}日 ${isToday ? '今天 · ' : ''}${weekDay}`;
+      }
+    }
+
+    function initPolarisBindings() {
+      if (!window.polarisStore) return;
+      if (!currentSelectedDate) {
+        currentSelectedDate = window.polarisStore.getTodayDateStr();
+      }
+
+      window.polarisStore.subscribe((state) => {
+        renderScheduleStream(state);
+        renderTasks(state);
+        renderThreeThings(state);
+        renderHabits(state);
+        renderIdeas(state);
+        updateSyncBadge(state);
+      });
+
+      const state = window.polarisStore.state;
+      renderScheduleStream(state);
+      renderTasks(state);
+      renderThreeThings(state);
+      renderHabits(state);
+      renderIdeas(state);
+      renderEmojiPicker();
+      initScheduleInput();
+      initFocusTimer();
+      initAudioConsole();
+      initBreathing();
+      initAlarmSwitches();
+      initStationeryTools();
+      initMosaicClicks();
+      updateSyncBadge(state);
+
+      sendLanLog('STATE_READY', `PolarisStore initialized with ${state.schedules.length} schedules`);
+    }
+
+    // 渲染日程时间块流与动态周导航
+    function renderScheduleStream(state) {
+      if (!currentSelectedDate) {
+        currentSelectedDate = window.polarisStore ? window.polarisStore.getTodayDateStr() : '2026-10-04';
+      }
+      updateDateHeader(currentSelectedDate);
+
+      // 1. 渲染本周 7 天胶囊导航条 (Mon - Sun)
+      const weekStrip = document.getElementById('agenda-week-strip');
+      if (weekStrip) {
+        const curr = new Date(currentSelectedDate + 'T00:00:00');
+        const dayOfWeek = curr.getDay() === 0 ? 7 : curr.getDay();
+        const monday = new Date(curr);
+        monday.setDate(curr.getDate() - (dayOfWeek - 1));
+
+        const dayNames = ['一', '二', '三', '四', '五', '六', '日'];
+        let pillsHtml = '';
+        for (let i = 0; i < 7; i++) {
+          const pillDate = new Date(monday);
+          pillDate.setDate(monday.getDate() + i);
+          const y = pillDate.getFullYear();
+          const m = String(pillDate.getMonth() + 1).padStart(2, '0');
+          const d = String(pillDate.getDate()).padStart(2, '0');
+          const dateStr = `${y}-${m}-${d}`;
+
+          const isSelected = dateStr === currentSelectedDate;
+          const isToday = dateStr === (window.polarisStore ? window.polarisStore.getTodayDateStr() : '');
+
+          pillsHtml += `
+            <div class="agenda-day-pill ${isSelected ? 'active' : ''} ${isToday ? 'today' : ''}" 
+                 onclick="handleSelectAgendaDate('${dateStr}')">
+              <span class="day-w">周${dayNames[i]}</span>
+              <span class="day-n">${d}</span>
+            </div>
+          `;
+        }
+        weekStrip.innerHTML = pillsHtml;
+      }
+
+      // 2. 渲染当天日程列表
+      const listArea = document.getElementById('agenda-schedule-list');
+      if (!listArea) return;
+
+      const daySchedules = (state.schedules || []).filter(s => s.date === currentSelectedDate && !s.markedDelete);
+      daySchedules.sort((a, b) => {
+        const timeA = a.startTime || a.time || '00:00';
+        const timeB = b.startTime || b.time || '00:00';
+        return timeA.localeCompare(timeB);
+      });
+
+      if (daySchedules.length === 0) {
+        listArea.innerHTML = `
+          <div class="agenda-empty-state">
+            <span style="font-size:32px;">🗓️</span>
+            <span>本日暂无排程事项</span>
+            <button class="k80-year-quick-btn" onclick="openAddScheduleModal()">+ 立即新建排程</button>
+          </div>
+        `;
+        return;
+      }
+
+      listArea.innerHTML = daySchedules.map(s => {
+        const isDone = s.status === '完成';
+        const cat = s.category || '生活';
+        const catColor = CATEGORY_COLORS[cat] || '#007aff';
+        const timeStr = s.startTime ? (s.startTime.includes(' ') ? s.startTime.split(' ')[1].slice(0, 5) : s.startTime.slice(0, 5)) : '全天';
+        const endTimeStr = s.endTime ? (s.endTime.includes(' ') ? s.endTime.split(' ')[1].slice(0, 5) : s.endTime.slice(0, 5)) : '';
+        const displayTime = endTimeStr ? `${timeStr} - ${endTimeStr}` : timeStr;
+
+        return `
+          <div class="agenda-schedule-item ${isDone ? 'is-done' : ''}" 
+               style="--cat-color: ${catColor};"
+               onclick="openScheduleModal('${s.record_id}')">
+            <div class="sched-info">
+              <div class="sched-title">${s.title || s.text || '日程事项'}</div>
+              <div class="sched-meta">
+                <span class="sched-cat-tag" style="background:${catColor}22; color:${catColor};">${cat}</span>
+                <span>⏰ ${displayTime}</span>
+              </div>
+            </div>
+            <div class="sched-check-circle" onclick="event.stopPropagation(); handleToggleScheduleItem('${s.record_id}')">
+              ${isDone ? '✓' : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleSelectAgendaDate(dateStr) {
+      hapticFeedback(25);
+      currentSelectedDate = dateStr;
+      if (window.polarisStore) {
+        renderScheduleStream(window.polarisStore.state);
+      }
+    }
+
+    function handleToggleScheduleItem(recordId) {
+      hapticFeedback(45);
+      if (window.polarisStore) {
+        window.polarisStore.toggleScheduleStatus(recordId);
+      }
+    }
+
+    // 自然语言排程回车监听
+    function initScheduleInput() {
+      const input = document.querySelector('.nl-input');
+      if (!input) return;
+      input.placeholder = "输入排程，如：明天下午3点 团队研讨例会...";
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const val = input.value.trim();
+          if (val) {
+            hapticFeedback(40);
+            window.polarisStore.addSchedule(val, '工作');
+            input.value = '';
+            showToast(`已添加到排程：「${val}」📅`);
+          }
+        }
+      });
+      const plusBtn = document.querySelector('.rsuyoy-smart-input-box .plus-icon');
+      if (plusBtn) {
+        plusBtn.style.cursor = 'pointer';
+        plusBtn.onclick = () => {
+          const val = input.value.trim();
+          if (val) {
+            hapticFeedback(40);
+            window.polarisStore.addSchedule(val, '工作');
+            input.value = '';
+            showToast(`已添加到排程：「${val}」📅`);
+          }
+        };
+      }
+    }
+
+    // 视图切换交互
+    function switchScheduleViewType(type, btn) {
+      hapticFeedback(20);
+      document.querySelectorAll('.view-icons-pill .v-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      showToast(`已切换至【${type === 'list' ? '列表视图' : '日历视图'}】`);
+    }
+
+    function switchScheduleViewMode(mode, btn) {
+      hapticFeedback(20);
+      document.querySelectorAll('.view-modes-pill .m-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const names = { day: '日排程', week: '周排程', month: '月全貌', year: '年全景' };
+      showToast(`已切换至【${names[mode] || mode}】`);
+    }
+
+    function toggleViewSpanDropdown(el) {
+      hapticFeedback(25);
+      let dropdown = document.querySelector('.view-span-dropdown');
+      if (dropdown) {
+        dropdown.remove();
+        return;
+      }
+      dropdown = document.createElement('div');
+      dropdown.className = 'view-span-dropdown';
+      dropdown.innerHTML = `
+        <div class="view-span-item" onclick="selectViewSpan('1天视图', this)">1天视图</div>
+        <div class="view-span-item active" onclick="selectViewSpan('3天视图', this)">3天视图</div>
+        <div class="view-span-item" onclick="selectViewSpan('7天周视图', this)">7天周视图</div>
+      `;
+      el.parentElement.appendChild(dropdown);
+    }
+
+    function selectViewSpan(text, item) {
+      hapticFeedback(30);
+      const spanEl = document.querySelector('.jul26-pill-select');
+      if (spanEl) spanEl.innerText = text + ' ▾';
+      document.querySelector('.view-span-dropdown')?.remove();
+      showToast(`已切换为【${text}】`);
+    }
+
+    function selectDayCapsule(el) {
+      hapticFeedback(25);
+      document.querySelectorAll('.jul26-w-item').forEach(i => i.classList.remove('active-day'));
+      el.classList.add('active-day');
+      const dayNum = el.querySelector('.w-n')?.innerText || '今天';
+      showToast(`已选中 ${dayNum}日 排程`);
+    }
+
+    // 全能记录加号
+    function handleAnyLogPlus(el) {
+      hapticFeedback(35);
+      const parent = el.closest('.anylog-col-card');
+      const countEl = parent.querySelector('.anylog-cnt');
+      if (parent.innerText.includes('应用')) {
+        appUsageCount++;
+        countEl.innerHTML = `${appUsageCount} <small>条</small>`;
+        showToast(`已增加 1 条应用使用打卡`);
+      } else {
+        coffeeCount++;
+        countEl.innerHTML = `${coffeeCount} <small>杯</small>`;
+        showToast(`已记录今日第 ${coffeeCount} 杯健康咖啡 ☕`);
+      }
+    }
+
+    // 弹窗控制：新建排程
+    function openAddScheduleModal() {
+      hapticFeedback(30);
+      document.getElementById('add-schedule-modal').classList.add('open');
+      document.getElementById('new-sched-title').focus();
+    }
+    function closeAddScheduleModal() {
+      document.getElementById('add-schedule-modal').classList.remove('open');
+    }
+    function submitAddSchedule() {
+      const title = document.getElementById('new-sched-title').value.trim();
+      const start = document.getElementById('new-sched-start').value;
+      const end = document.getElementById('new-sched-end').value;
+      const cat = document.getElementById('new-sched-cat').value;
+      if (!title) {
+        showToast('请输入日程标题');
+        return;
+      }
+      hapticFeedback(50);
+      window.polarisStore.addSchedule(title, cat, null, start, end);
+      closeAddScheduleModal();
+      document.getElementById('new-sched-title').value = '';
+      showToast(`已成功添加排程：「${title}」✓`);
+    }
+
+    // 更多菜单与设置
+    function openMoreMenuModal() {
+      hapticFeedback(25);
+      showToast('已打开日程高级管理：支持导出海报、清空已完成');
+    }
+    function openSettingsModal() {
+      hapticFeedback(25);
+      document.getElementById('settings-modal').classList.add('open');
+    }
+    function closeSettingsModal() {
+      document.getElementById('settings-modal').classList.remove('open');
+    }
+
+    // 语音输入模拟弹窗
+    function toggleVoiceInputModal() {
+      hapticFeedback(35);
+      document.getElementById('voice-modal').classList.add('open');
+    }
+    function closeVoiceModal() {
+      document.getElementById('voice-modal').classList.remove('open');
+    }
+    function simulateVoiceFinish() {
+      hapticFeedback(45);
+      const text = '下午4点 讨论手机端适配方案';
+      window.polarisStore.addSchedule(text, '工作', null, '16:00', '17:00');
+      closeVoiceModal();
+      showToast(`语音识别成功并添加：「${text}」🎙️`);
+    }
+
+    // 打开日程详情弹窗
+    function openScheduleModal(recordId) {
+      hapticFeedback(25);
+      const s = window.polarisStore.state.schedules.find(x => x.record_id === recordId) || window.polarisStore.state.schedules[0];
+      if (!s) return;
+      currentActiveSchedule = s;
+
+      document.getElementById('sched-modal-title').innerText = '排程 · ' + (s.category || '事项');
+      document.getElementById('sched-detail-name').innerText = s.text || s.title || '排程';
+      document.getElementById('sched-detail-time').innerText = (s.startTime ? s.startTime.slice(11, 16) : '09:00') + ' - ' + (s.endTime ? s.endTime.slice(11, 16) : '10:00');
+      document.getElementById('sched-detail-cat').innerText = s.category || '生活';
+      document.getElementById('sched-detail-status').innerText = s.status || '未完成';
+
+      const isDone = s.status === '完成';
+      document.getElementById('sched-toggle-btn-txt').innerText = isDone ? '设为未完成 ↺' : '标记为已完成 ✓';
+
+      document.getElementById('schedule-modal').classList.add('open');
+    }
+
+    function closeScheduleModal() {
+      document.getElementById('schedule-modal').classList.remove('open');
+    }
+
+    function handleToggleScheduleDone() {
+      if (!currentActiveSchedule) return;
+      hapticFeedback(50);
+      window.polarisStore.toggleScheduleStatus(currentActiveSchedule.record_id);
+      closeScheduleModal();
+      showToast('已更新排程完成状态 ✓');
+    }
+
+    function handleDeleteSchedule() {
+      if (!currentActiveSchedule) return;
+      hapticFeedback(50);
+      window.polarisStore.deleteSchedule(currentActiveSchedule.record_id);
+      closeScheduleModal();
+      showToast('排程已删除 🗑️');
+    }
+
+    // 渲染三件事
+    function renderThreeThings(state) {
+      const slots = document.querySelectorAll('.ui-three-things-box .thing-slot');
+      state.threeThings.forEach((t, i) => {
+        if (slots[i]) {
+          slots[i].innerText = `${i+1}. ${t.text} ${t.done ? '✓' : ''}`;
+          slots[i].style.textDecoration = t.done ? 'line-through' : 'none';
+          slots[i].style.opacity = t.done ? '0.6' : '1';
+          slots[i].onclick = () => {
+            hapticFeedback(30);
+            window.polarisStore.toggleThreeThing(i);
+            showToast(`三件事第 ${i+1} 项已切换状态`);
+          };
+        }
+      });
+    }
+
+    // 渲染任务清单与吃青蛙
+    function renderTasks(state) {
+      const badge = document.querySelector('.ui-actions-gtd-card .theme-badge-pill');
+      const itemsContainer = document.querySelector('.ui-actions-gtd-card .gtd-action-items');
+
+      if (state.tasks) {
+        const doneCount = state.tasks.filter(t => t.done).length;
+        if (badge) {
+          badge.innerText = `${doneCount}/${state.tasks.length} 已击破`;
+        }
+
+        if (itemsContainer) {
+          if (state.tasks.length === 0) {
+            itemsContainer.innerHTML = `
+              <div style="text-align:center; padding:24px 12px; color:var(--theme-text-muted); font-size:12px;">
+                暂无行动项，点击右上角【+ 新建行动】开启击破 🐸
+              </div>
+            `;
+          } else {
+            itemsContainer.innerHTML = state.tasks.map((t, idx) => {
+              const isFrog = t.priority === 'P0' || idx === 0;
+              const isDone = t.done;
+              if (isFrog && !isDone) {
+                return `
+                  <div class="gtd-item frog-item">
+                    <span class="gtd-frog-badge">🐸 最大青蛙</span>
+                    <div class="gtd-text-box" onclick="handleToggleTaskItem('${t.id}')" style="cursor:pointer; flex:1;">
+                      <div class="gtd-item-title">${t.title}</div>
+                      <div class="gtd-item-sub">优先级 ${t.priority || 'P0'} · ${t.time || '今日必达'}</div>
+                    </div>
+                    <button class="gtd-stamp-btn" onclick="handleToggleTaskItem('${t.id}')">
+                      <span class="stamp-txt">完成</span>
+                    </button>
+                    <button style="border:none; background:transparent; color:#ef4444; font-size:14px; cursor:pointer; padding:6px;" onclick="handleDeleteTaskItem('${t.id}')">✕</button>
+                  </div>
+                `;
+              } else {
+                return `
+                  <div class="gtd-item normal ${isDone ? 'done' : ''}">
+                    <span class="todo-check-circle" onclick="handleToggleTaskItem('${t.id}')" style="cursor:pointer;">${isDone ? '✓' : ''}</span>
+                    <div class="gtd-text-box" onclick="handleToggleTaskItem('${t.id}')" style="cursor:pointer; flex:1;">
+                      <div class="gtd-item-title" style="${isDone ? 'text-decoration:line-through; opacity:0.6;' : ''}">${t.title}</div>
+                      <div class="gtd-item-sub">${t.priority || 'P1'} · ${t.time || '日常推进'}</div>
+                    </div>
+                    <button style="border:none; background:transparent; color:var(--theme-text-muted); font-size:13px; cursor:pointer; padding:6px;" onclick="handleDeleteTaskItem('${t.id}')">✕</button>
+                  </div>
+                `;
+              }
+            }).join('');
+          }
+        }
+      }
+    }
+
+    function handleToggleTaskItem(taskId) {
+      hapticFeedback(35);
+      window.polarisStore.toggleTask(taskId);
+      showToast('行动状态已更新 ✓');
+    }
+
+    function handleDeleteTaskItem(taskId) {
+      hapticFeedback(40);
+      window.polarisStore.deleteTask(taskId);
+      showToast('行动项已移除 🗑️');
+    }
+
+    // 闹钟开关初始化
+    function initAlarmSwitches() {
+      document.querySelectorAll('.alarm-switch-toggle, .alarm-toggle').forEach(sw => {
+        sw.onclick = () => toggleAlarmSwitch(sw);
+      });
+    }
+
+    function toggleAlarmSwitch(sw) {
+      hapticFeedback(30);
+      sw.classList.toggle('active');
+      const isAct = sw.classList.contains('active');
+      showToast(`闹钟已${isAct ? '开启 ⏰' : '关闭'}`);
+    }
+
+    // 渲染习惯打卡点阵
+    function renderHabits(state) {
+      const listEl = document.querySelector('.habit-freq-list');
+      if (!listEl || !state.habits) return;
+
+      listEl.innerHTML = state.habits.map(h => `
+        <div class="habit-freq-row">
+          <div class="h-info">
+            <span class="h-ico">${h.icon}</span>
+            <span class="h-name">${h.name}</span>
+          </div>
+          <div class="h-dots">
+            ${h.days.map((d, dIdx) => `
+              <span class="h-dot ${d ? 'checked' : ''}" onclick="handleHabitClick('${h.id}', ${dIdx})">
+                ${d ? '✓' : ''}
+              </span>
+            `).join('')}
+          </div>
+          <span class="h-streak">${h.streak}天</span>
+        </div>
+      `).join('');
+    }
+
+    function handleHabitClick(habitId, dayIndex) {
+      hapticFeedback(30);
+      window.polarisStore.toggleHabitDay(habitId, dayIndex);
+      showToast('习惯打卡点阵已记录 🔥');
+    }
+
+    function openAddHabitModal() {
+      hapticFeedback(30);
+      document.getElementById('add-habit-modal').classList.add('open');
+      document.getElementById('new-habit-name').focus();
+    }
+    function closeAddHabitModal() {
+      document.getElementById('add-habit-modal').classList.remove('open');
+    }
+    function submitAddHabit() {
+      const name = document.getElementById('new-habit-name').value.trim();
+      const icon = document.getElementById('new-habit-icon').value.trim() || '🌱';
+      if (!name) {
+        showToast('请输入习惯名称');
+        return;
+      }
+      hapticFeedback(50);
+      window.polarisStore.addHabit(name, icon);
+      closeAddHabitModal();
+      document.getElementById('new-habit-name').value = '';
+      showToast(`已添加新习惯：「${name}」🌱`);
+    }
+
+    // 渲染灵感想法便笺墙
+    function renderIdeas(state) {
+      const grid = document.querySelector('.ideas-notes-grid');
+      if (!grid || !state.ideas) return;
+
+      grid.innerHTML = state.ideas.map(i => `
+        <div class="sticky-memo ${i.color || 'yellow'}">
+          <div class="sticky-tape"></div>
+          <div class="memo-text" contenteditable="true" onblur="window.polarisStore.notify()">${i.text}</div>
+          <div class="memo-footer">
+            <span class="memo-time">${i.time || '刚刚'}</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="memo-action-btn" onclick="handleConvertIdea('${i.id}')">
+                ${i.converted ? '已转行动 ✓' : '⚡转行动'}
+              </span>
+              <span style="cursor:pointer; color:rgba(0,0,0,0.35); font-size:13px; padding:2px 4px;" onclick="handleDeleteIdea('${i.id}')" title="删除便笺">✕</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      const writeBtn = document.querySelector('.ui-ideas-scratchpad-card .theme-icon-btn');
+      if (writeBtn) {
+        writeBtn.onclick = openAddMemoModal;
+      }
+    }
+
+    function handleDeleteIdea(id) {
+      hapticFeedback(40);
+      window.polarisStore.deleteIdea(id);
+      showToast('灵感便笺已移除 🗑️');
+    }
+
+    function openAddMemoModal() {
+      hapticFeedback(30);
+      document.getElementById('add-memo-modal').classList.add('open');
+      document.getElementById('new-memo-text').focus();
+    }
+    function closeAddMemoModal() {
+      document.getElementById('add-memo-modal').classList.remove('open');
+    }
+    function selectMemoColor(color, el) {
+      hapticFeedback(20);
+      selectedMemoColor = color;
+      document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+    }
+    function submitAddMemo() {
+      const text = document.getElementById('new-memo-text').value.trim();
+      if (!text) {
+        showToast('请输入灵感内容');
+        return;
+      }
+      hapticFeedback(50);
+      window.polarisStore.addIdea(text, selectedMemoColor);
+      closeAddMemoModal();
+      document.getElementById('new-memo-text').value = '';
+      showToast('灵感便笺已贴好 ✨');
+    }
+
+    function handleConvertIdea(id) {
+      hapticFeedback(40);
+      window.polarisStore.convertIdeaToAction(id);
+      showToast('灵感已自动转化为即刻行动！⚡');
+    }
+
+    // 拟物文具盒点击
+    function initStationeryTools() {
+      document.querySelectorAll('.stationery-item, .tool-pencil, .tool-ruler').forEach(tool => {
+        tool.onclick = () => {
+          hapticFeedback(30);
+          showToast(`已拾起工具，在屏幕上留下微痕迹 ✏️`);
+        };
+      });
+    }
+
+    // 365天马赛克色块点击
+    function initMosaicClicks() {
+      document.querySelectorAll('.year-mosaic-months-grid .heat-c').forEach(cell => {
+        cell.onclick = () => {
+          hapticFeedback(20);
+          showToast('2026年打卡记录：完成度良好 ★★★★★');
+        };
+      });
+    }
+
+    // 复盘保存与导出
+    function saveReviewContent() {
+      hapticFeedback(40);
+      showToast('本周复盘心得已成功保存并备份 ✓');
+    }
+    function exportReviewCard() {
+      hapticFeedback(40);
+      showToast('已生成复盘手账长图并保存至相册 📸');
+    }
+
+    // 宠物互动
+    function petInteract(act) {
+      hapticFeedback(40);
+      const responses = {
+        feed: '(*^▽^*) 咔嚓咔嚓！宠物开心地吃完了小饼干！好感度 +5 🍪',
+        pet: '(๑•̀ㅂ•́)و✧ 呼噜呼噜~ 宠物享受着你的温柔抚摸！🐾',
+        chat: '主人今天辛苦啦！保持专注，北极星时刻照亮前路 🌟'
+      };
+      showToast(responses[act] || '宠物向你挥了挥小爪子！');
+    }
+
+    // 行动板块：新建与清空 (底部抽屉弹窗)
+    function openAddActionModal() {
+      hapticFeedback(30);
+      document.getElementById('add-action-modal').classList.add('open');
+      document.getElementById('new-action-title').focus();
+    }
+    function closeAddActionModal() {
+      document.getElementById('add-action-modal').classList.remove('open');
+    }
+    function submitAddAction() {
+      const title = document.getElementById('new-action-title').value.trim();
+      const priority = document.getElementById('new-action-priority').value;
+      const timeVal = document.getElementById('new-action-time').value;
+      if (!title) {
+        showToast('请输入行动事项标题');
+        return;
+      }
+      hapticFeedback(50);
+      const t = window.polarisStore.addTask(title, priority);
+      t.time = timeVal;
+      window.polarisStore.notify();
+      closeAddActionModal();
+      document.getElementById('new-action-title').value = '';
+      showToast(`已新增吃青蛙行动：「${title}」🐸`);
+    }
+    function clearDoneActions() {
+      hapticFeedback(30);
+      window.polarisStore.state.tasks = window.polarisStore.state.tasks.filter(t => !t.done);
+      window.polarisStore.notify();
+      showToast('已清理全部已完成行动项 🧹');
+    }
+
+    // 41 款表情打卡弹窗
+    function renderEmojiPicker() {
+      const list = document.getElementById('emoji-picker-list');
+      if (!list) return;
+
+      list.innerHTML = EMOJI_PALETTE.map(e => `
+        <div class="emoji-pick-item" onclick="handleSelectEmoji('${e.id}', '${e.name}')" title="${e.name}">
+          <img src="./assets/emojis/${e.id}" alt="${e.name}" />
+        </div>
+      `).join('');
+
+      const calBox = document.querySelector('.ui-april-cal-box');
+      if (calBox) {
+        calBox.style.cursor = 'pointer';
+        calBox.addEventListener('click', (e) => {
+          openEmojiModal();
+        });
+      }
+    }
+
+    function openEmojiModal() {
+      hapticFeedback(25);
+      document.getElementById('emoji-modal').classList.add('open');
+    }
+    function closeEmojiModal() {
+      document.getElementById('emoji-modal').classList.remove('open');
+    }
+
+    function handleSelectEmoji(emojiId, emojiName) {
+      hapticFeedback(50);
+      window.polarisStore.logMood(emojiId, emojiName);
+      closeEmojiModal();
+      showToast(`今日心情已打卡：【${emojiName}】😊`);
+
+      const todayCell = document.querySelector('.april-days-grid .c-cell:nth-child(5)');
+      if (todayCell) {
+        todayCell.innerHTML = `<img src="./assets/emojis/${emojiId}" style="width:24px; height:24px; object-fit:contain;" /><span class="d-n">3</span>`;
+        todayCell.classList.add('emoji-fill');
+      }
+    }
+
+    // 专注倒计时逻辑
+    function initFocusTimer() {
+      const stage = document.querySelector('.galih-ring-stage');
+      if (!stage) return;
+
+      const durRow = document.createElement('div');
+      durRow.className = 'focus-duration-row';
+      durRow.innerHTML = `
+        <span class="focus-dur-chip" onclick="setFocusDuration(15, this)">15分钟</span>
+        <span class="focus-dur-chip active" onclick="setFocusDuration(25, this)">25分钟</span>
+        <span class="focus-dur-chip" onclick="setFocusDuration(45, this)">45分钟</span>
+        <span class="focus-dur-chip" onclick="setFocusDuration(60, this)">60分钟</span>
+      `;
+      stage.appendChild(durRow);
+
+      const ctrl = document.createElement('div');
+      ctrl.className = 'focus-control-bar';
+      ctrl.innerHTML = `
+        <button class="focus-btn btn-start" id="focus-toggle-btn" onclick="toggleFocusTimer()">开始专注</button>
+        <button class="focus-btn btn-reset" onclick="resetFocusTimer()">重置</button>
+      `;
+      stage.appendChild(ctrl);
+    }
+
+    function setFocusDuration(mins, chip) {
+      hapticFeedback(20);
+      document.querySelectorAll('.focus-dur-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      resetFocusTimer();
+      focusSecondsLeft = mins * 60;
+      const coreDigits = document.querySelector('.core-digits');
+      if (coreDigits) coreDigits.innerText = `${mins < 10 ? '0' + mins : mins}:00`;
+      showToast(`专注时长已设置为 ${mins} 分钟`);
+    }
+
+    function toggleFocusTimer() {
+      hapticFeedback(40);
+      const btn = document.getElementById('focus-toggle-btn');
+      const coreDigits = document.querySelector('.core-digits');
+
+      if (!isFocusing) {
+        isFocusing = true;
+        btn.innerText = '暂停 ⏸';
+        btn.style.background = '#eab308';
+        showToast('专注时空已启动，保持心流 ⏳');
+
+        focusTimer = setInterval(() => {
+          if (focusSecondsLeft > 0) {
+            focusSecondsLeft--;
+            const m = Math.floor(focusSecondsLeft / 60);
+            const s = focusSecondsLeft % 60;
+            if (coreDigits) coreDigits.innerText = `${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`;
+          } else {
+            clearInterval(focusTimer);
+            isFocusing = false;
+            btn.innerText = '开始专注';
+            btn.style.background = 'var(--theme-accent)';
+            window.polarisStore.recordFocus('番茄心流专注', 25, '工作');
+            hapticFeedback(80);
+            showToast('恭喜完成心流专注！已记录 🏆');
+          }
+        }, 1000);
+      } else {
+        clearInterval(focusTimer);
+        isFocusing = false;
+        btn.innerText = '继续专注 ▶';
+        btn.style.background = 'var(--theme-accent)';
+        showToast('专注已暂停');
+      }
+    }
+
+    function resetFocusTimer() {
+      hapticFeedback(25);
+      clearInterval(focusTimer);
+      isFocusing = false;
+      focusSecondsLeft = 25 * 60;
+      const coreDigits = document.querySelector('.core-digits');
+      if (coreDigits) coreDigits.innerText = '25:00';
+      const btn = document.getElementById('focus-toggle-btn');
+      if (btn) {
+        btn.innerText = '开始专注';
+        btn.style.background = 'var(--theme-accent)';
+      }
+    }
+
+    // 呼吸减压引导
+    function initBreathing() {
+      const card = document.querySelector('.ui-breathing-relax-card');
+      if (card) {
+        card.style.cursor = 'pointer';
+        card.onclick = () => {
+          hapticFeedback(40);
+          showToast('跟随呼吸节奏：吸气 4秒 · 屏息 7秒 · 呼气 8秒 🧘');
+        };
+      }
+    }
+
+    // 白噪音音频台
+    function initAudioConsole() {
+      const playBtn = document.querySelector('.ui-cat-audio-console button, .cat-play-btn');
+      if (playBtn) {
+        playBtn.onclick = () => toggleWhiteNoise();
+      }
+      const knob = document.querySelector('.cat-volume-knob, .knob-ring');
+      if (knob) {
+        knob.style.cursor = 'pointer';
+        knob.onclick = () => {
+          hapticFeedback(20);
+          showToast('音量微调已生效 🔉');
+        };
+      }
+    }
+
+    function toggleWhiteNoise() {
+      hapticFeedback(30);
+      if (!isAudioPlaying) {
+        try {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const bufferSize = audioCtx.sampleRate * 2;
+          const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+          const output = noiseBuffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+          }
+          whiteNoiseNode = audioCtx.createBufferSource();
+          whiteNoiseNode.buffer = noiseBuffer;
+          whiteNoiseNode.loop = true;
+
+          const filter = audioCtx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.value = 650;
+
+          gainNode = audioCtx.createGain();
+          gainNode.gain.value = 0.15;
+
+          whiteNoiseNode.connect(filter);
+          filter.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+
+          whiteNoiseNode.start();
+          isAudioPlaying = true;
+          showToast('已开启柔和雨声白噪音 🌧️');
+        } catch (e) {
+          console.warn('Audio play error:', e);
+        }
+      } else {
+        if (whiteNoiseNode) {
+          try { whiteNoiseNode.stop(); } catch (e) {}
+        }
+        isAudioPlaying = false;
+        showToast('白噪音已停止 ⏸');
+      }
+    }
+
+    // ================= 7. 多维表格同步中枢弹窗交互 =================
+    function openSyncModal() {
+      hapticFeedback(30);
+      const modal = document.getElementById('sync-modal');
+      const store = window.polarisStore;
+      if (store) {
+        document.getElementById('sync-local-count').innerText = `${store.state.schedules.length} 条`;
+        document.getElementById('sync-pending-count').innerText = `${store.state.pendingChanges.length} 条`;
+        document.getElementById('sync-last-time').innerText = store.state.lastSyncTime || '尚未同步';
+      }
+      modal.classList.add('open');
+    }
+
+    function closeSyncModal() {
+      document.getElementById('sync-modal').classList.remove('open');
+    }
+
+    function updateSyncBadge(state) {
+      const badge = document.getElementById('k80-sync-badge');
+      const text = document.getElementById('sync-badge-text');
+      if (!badge || !text) return;
+
+      badge.className = 'k80-sync-badge';
+      if (state.syncStatus === 'syncing') {
+        badge.classList.add('syncing');
+        text.innerText = '同步中...';
+      } else if (state.syncStatus === 'error') {
+        badge.classList.add('error');
+        text.innerText = '连接异常';
+      } else if (state.pendingChanges.length > 0) {
+        text.innerText = `待推送 (${state.pendingChanges.length})`;
+      } else {
+        text.innerText = '已连接飞书';
+      }
+    }
+
+    async function handlePullFromFeishu() {
+      hapticFeedback(40);
+      showToast('正在从飞书多维表格拉取最新排程...');
+      try {
+        const res = await window.polarisStore.pullFromFeishu();
+        showToast(`成功同步 ${res.count} 条多维表格排程！🎉`);
+        closeSyncModal();
+      } catch (err) {
+        showToast('拉取失败，请确认连接到局域网 Wi-Fi (192.168.1.8:8080)');
+      }
+    }
+
+    async function handlePushToFeishu() {
+      hapticFeedback(40);
+      showToast('正在推送本地修改到飞书多维表格...');
+      try {
+        await window.polarisStore.pushToFeishu();
+        showToast('本地修改已成功推送至飞书！✓');
+        closeSyncModal();
+      } catch (err) {
+        showToast('推送失败，请确认电脑端服务处于启动状态');
+      }
+    }
+
+    // 页面加载启动
+    window.addEventListener('DOMContentLoaded', () => {
+      sendLanLog('BOOT', 'mobile-app.html loaded on REDMI K80');
+      initK80Slots();
+      initPolarisBindings();
+      initFabGestures();
+    });
+  </script>
+</body>
+</html>

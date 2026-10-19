@@ -1,0 +1,42 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.yearcalendar.k80'
+    compileSdk 35
+    buildToolsVersion '35.0.1'
+
+    defaultConfig {
+        applicationId "com.yearcalendar.k80"
+        minSdk 26
+        targetSdk 34
+        versionCode 20
+        versionName "1.5.6"
+    }
+
+    signingConfigs {
+        debug {
+            // 自动使用本地标准 Android debug.keystore 签名
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.debug
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            signingConfig signingConfigs.debug
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // 纯 Android 原生 SDK 构建，极速轻量且零外部依赖冲突
+}

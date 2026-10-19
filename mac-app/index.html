@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title></title>
+    <script>document.title = "";</script>
+    <meta name="creative-medium" content="interactive-prototype" />
+    <script>
+      window.onerror = function(msg, url, line, col, error) {
+        var data = { type: 'ERROR', msg: String(msg), url: url, line: line, col: col, stack: error ? error.stack : '' };
+        fetch('/api/log', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).catch(function(){});
+      };
+      console.error = (function(orig) {
+        return function() {
+          orig.apply(console, arguments);
+          var args = Array.prototype.slice.call(arguments).map(function(a) {
+            try {
+              if (a instanceof Error) return a.message + " " + a.stack;
+              return typeof a === 'object' ? JSON.stringify(a) : String(a);
+            } catch(e) { return String(a); }
+          });
+          fetch('/api/log', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ type: 'CONSOLE_ERROR', args: args }) }).catch(function(){});
+        };
+      })(console.error);
+    </script>
+    <!-- 应用图标：本地 SVG，离线可用 -->
+    <link rel="icon" type="image/svg+xml" href="assets/app-icon.svg" />
+    <link rel="apple-touch-icon" href="assets/app-icon.svg" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <!-- 离线版：使用系统字体与本地大厂开源 Phosphor 图标库，无需网络 -->
+    <link rel="stylesheet" href="lib/phosphor/regular/style.css" />
+    <link rel="stylesheet" href="lib/phosphor/bold/style.css" />
+    <link rel="stylesheet" href="styles.css?v=20261001_1" />
+  </head>
+  <body>
+    <div id="root">
+      <div id="app-boot-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#fdfcf9;color:#6f7681;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Segoe UI',Roboto,sans-serif;">
+        <img src="assets/app-icon.svg" alt="" style="width:56px;height:56px;margin-bottom:12px;" />
+        <div style="font-size:13px;font-weight:500;letter-spacing:0.5px;color:#555a64;">年度看板加载中...</div>
+      </div>
+    </div>
+
+    <script src="lib/react.production.min.js"></script>
+    <script src="lib/react-dom.production.min.js"></script>
+    <script src="lib/solarlunar.min.js"></script>
+
+    <script src="assets/board_data.js"></script>
+    <script src="assets/base-upsert.js"></script>
+    <script src="assets/sfx.js"></script>
+    <script src="tweaks-panel.js?v=20260929_6"></script>
+    <script src="dialog.js?v=20260929_6"></script>
+
+    <script>window.TWEAK_DEFAULTS = {
+  "theme": "经典蓝",
+  "fontStyle": "苹方 (系统高清)",
+  "colorMode": "彩色",
+  "weekend": false,
+  "density": "紧凑",
+  "chipPos": "居中",
+  "chipShow": false,
+  "missed": true,
+  "sfx": true,
+  "zen": false,
+  "realtimeSync": false
+};</script>
+
+    <script>
+      /* 构建握手：离线版无需版本自愈，保留占位 */
+      window.__EXPECT_BUILD = "offline";
+      window.__APP_BUILD = "offline";
+    </script>
+
+    <script src="app.js?v=20261001_1"></script>
+  </body>
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notion 菜单栏小看板</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      width: 100%;
+      max-width: 100%;
+      height: 100vh;
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #ffffff;
+      color: #202124;
+      font-size: 13px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    /* 容器 */
+    .mb-container {
+      flex: 1;
+      width: 100%;
+      min-width: 0;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+    /* 分组小标题 */
+    .mb-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #80868b;
+      margin-top: 10px;
+      margin-bottom: 4px;
+      padding: 0 4px;
+    }
+    .mb-section-title:first-child {
+      margin-top: 2px;
+    }
+    /* 日程行条目 (对齐截图) */
+    .mb-event-row {
+      display: flex;
+      align-items: center;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.12s;
+      gap: 6px;
+      font-size: 12.5px;
+      min-width: 0;
+    }
+    .mb-event-row:hover {
+      background: #f1f3f4;
+    }
+    /* 竖向色彩指示条 */
+    .mb-color-bar {
+      width: 3px;
+      height: 13px;
+      border-radius: 1.5px;
+      background: #37352f;
+      flex-shrink: 0;
+    }
+    .mb-event-time {
+      font-weight: 600;
+      color: #202124;
+      flex-shrink: 0;
+    }
+    .mb-event-dot {
+      color: #80868b;
+      margin: 0 1px;
+    }
+    .mb-event-icon {
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .mb-event-title {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #37352f;
+    }
+    .mb-event-arrow {
+      color: #80868b;
+      font-size: 14px;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+    /* 链接行 */
+    .mb-link-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11.5px;
+      color: #1a73e8;
+      padding: 2px 8px 6px 17px;
+      cursor: pointer;
+      text-decoration: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .mb-link-row:hover {
+      text-decoration: underline;
+    }
+    /* 底部操作区 (固定底部) */
+    .mb-footer {
+      width: 100%;
+      box-sizing: border-box;
+      border-top: 1px solid #e8eaed;
+      padding: 6px 12px 8px 12px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .mb-action-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12.5px;
+      color: #37352f;
+      transition: background 0.12s;
+    }
+    .mb-action-row:hover {
+      background: #f1f3f4;
+    }
+    .mb-action-name {
+      font-weight: 500;
+    }
+    .mb-action-key {
+      font-size: 11px;
+      color: #80868b;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+    .mb-quit-row:hover {
+      background: #fce8e6;
+      color: #d93025;
+    }
+    /* 空态提示 */
+    .mb-empty-hint {
+      padding: 24px 12px;
+      text-align: center;
+      color: #80868b;
+      font-size: 12.5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="mb-container" id="eventsContainer">
+    <div class="mb-empty-hint">正在拉取看板日程...</div>
+  </div>
+
+  <div class="mb-footer">
+    <div class="mb-action-row" onclick="openMainWindow()">
+      <span class="mb-action-name">年度看板</span>
+      <span class="mb-action-key">⌘ 1</span>
+    </div>
+    <div class="mb-action-row" onclick="openSettings()">
+      <span class="mb-action-name">偏好设置...</span>
+      <span class="mb-action-key">⌘ ,</span>
+    </div>
+    <div class="mb-action-row mb-quit-row" onclick="quitApp()">
+      <span class="mb-action-name">完全退出年度看板</span>
+    </div>
+  </div>
+
+  <script>
+    const CATS = {
+      工作: "#007AFF",
+      生活: "#34C759",
+      学习: "#AF52DE",
+      运动: "#FF9500",
+      睡眠: "#8E8E93",
+      娱乐: "#FF2D55",
+      会议: "#9C7FC0",
+      "一天总结": "#34C759",
+      其他: "#EDE8DF"
+    };
+
+    function formatTime12(timeStr) {
+      if (!timeStr) return "";
+      const p = timeStr.split(":");
+      let h = parseInt(p[0], 10);
+      const m = p[1] || "00";
+      const ampm = h >= 12 ? "PM" : "AM";
+      h = h % 12;
+      if (h === 0) h = 12;
+      return `${h}:${m} ${ampm}`;
+    }
+
+    function openMainWindow() {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.openMain) {
+        window.webkit.messageHandlers.openMain.postMessage({});
+      } else {
+        fetch("/api/open-app", { method: "POST" });
+      }
+    }
+
+    function openSettings() {
+      openMainWindow();
+    }
+
+    function quitApp() {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.quitApp) {
+        window.webkit.messageHandlers.quitApp.postMessage({});
+      } else {
+        alert("请在主程序中退出");
+      }
+    }
+
+    function openLink(url, e) {
+      if (e) e.stopPropagation();
+      window.open(url, "_blank");
+    }
+
+    async function loadEvents() {
+      try {
+        const res = await fetch("/api/events");
+        const list = await res.json();
+        renderEvents(list || []);
+      } catch (err) {
+        document.getElementById("eventsContainer").innerHTML = '<div class="mb-empty-hint">暂无日程或无法连接服务</div>';
+      }
+    }
+
+    function renderEvents(rawList) {
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const tom = new Date(now.getTime() + 86400000);
+      const tomStr = `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, '0')}-${String(tom.getDate()).padStart(2, '0')}`;
+
+      // 提取规范字段
+      const events = rawList.map(r => {
+        const fields = r.fields || r;
+        const date = fields["日期"] || fields.date || "";
+        const title = fields["事项"] || fields.text || fields["标题"] || "未命名日程";
+        const category = fields["板块"] || fields.category || "工作";
+        const type = fields["日程类型"] || fields.type || "";
+        const startTime = fields["开始时间"] || fields.startTime || "";
+        const note = fields["备注"] || fields.note || "";
+        let sTime = "09:00";
+        if (startTime && startTime.includes("T")) sTime = startTime.split("T")[1].slice(0, 5);
+        else if (startTime && startTime.includes(" ")) sTime = startTime.split(" ")[1].slice(0, 5);
+        else if (fields.startTimeStr) sTime = fields.startTimeStr;
+
+        return {
+          id: r.record_id || r.id,
+          date,
+          title,
+          category,
+          type,
+          sTime,
+          note,
+          fullStart: `${date} ${sTime}:00`,
+        };
+      }).filter(e => e.date >= todayStr).sort((a, b) => a.fullStart.localeCompare(b.fullStart));
+
+      // 寻找即将到来的日程 (未来 60 分钟内开始)
+      const nowTs = now.getTime();
+      let upcoming = null;
+      let upcomingDiffMin = null;
+
+      for (const ev of events) {
+        const evTs = new Date(ev.fullStart.replace(/-/g, "/")).getTime();
+        const diffMin = Math.round((evTs - nowTs) / 60000);
+        if (diffMin >= 0 && diffMin <= 60) {
+          upcoming = ev;
+          upcomingDiffMin = diffMin;
+          break;
+        }
+      }
+
+      // 更新原生系统菜单栏文字 (如: | ✂️ 事项名称 in 37 m)
+      if (upcoming) {
+        const barTitle = `| ✂️ ${upcoming.title.slice(0, 10)}... in ${upcomingDiffMin} m`;
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.updateStatusTitle) {
+          window.webkit.messageHandlers.updateStatusTitle.postMessage(barTitle);
+        }
+      } else {
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.updateStatusTitle) {
+          window.webkit.messageHandlers.updateStatusTitle.postMessage("🗓 年度看板");
+        }
+      }
+
+      // 渲染分组
+      const container = document.getElementById("eventsContainer");
+      let html = "";
+
+      // 1. Upcoming in X min
+      if (upcoming) {
+        html += `<div class="mb-section-title">Upcoming in ${upcomingDiffMin} min</div>`;
+        const color = CATS[upcoming.category] || "#1a73e8";
+        html += `
+          <div class="mb-event-row" onclick="openMainWindow()">
+            <span class="mb-color-bar" style="background:${color}"></span>
+            <span class="mb-event-time">${formatTime12(upcoming.sTime)}</span>
+            <span class="mb-event-dot">·</span>
+            <span class="mb-event-icon">✂️</span>
+            <span class="mb-event-title">${upcoming.title}</span>
+            <span class="mb-event-arrow">›</span>
+          </div>
+        `;
+        if (upcoming.note && upcoming.note.startsWith("http")) {
+          html += `<div class="mb-link-row" onclick="openLink('${upcoming.note}', event)">🔗 ${upcoming.note}</div>`;
+        }
+      }
+
+      // 2. Today
+      const todayEvents = events.filter(e => e.date === todayStr);
+      if (todayEvents.length > 0) {
+        html += `<div class="mb-section-title">Today</div>`;
+        todayEvents.forEach(ev => {
+          const color = CATS[ev.category] || "#1a73e8";
+          html += `
+            <div class="mb-event-row" onclick="openMainWindow()">
+              <span class="mb-color-bar" style="background:${color}"></span>
+              <span class="mb-event-time">${formatTime12(ev.sTime)}</span>
+              <span class="mb-event-dot">·</span>
+              <span class="mb-event-title">${ev.title}</span>
+            </div>
+          `;
+        });
+      }
+
+      // 3. Tomorrow
+      const tomEvents = events.filter(e => e.date === tomStr);
+      if (tomEvents.length > 0) {
+        html += `<div class="mb-section-title">Tomorrow</div>`;
+        tomEvents.forEach(ev => {
+          const color = CATS[ev.category] || "#188038";
+          html += `
+            <div class="mb-event-row" onclick="openMainWindow()">
+              <span class="mb-color-bar" style="background:${color}"></span>
+              <span class="mb-event-time">${formatTime12(ev.sTime)}</span>
+              <span class="mb-event-dot">·</span>
+              <span class="mb-event-title">${ev.title}</span>
+            </div>
+          `;
+        });
+      }
+
+      // 4. 后续日期
+      const futureEvents = events.filter(e => e.date > tomStr);
+      const futureDates = [...new Set(futureEvents.map(e => e.date))].slice(0, 3);
+      futureDates.forEach(d => {
+        const dt = new Date(d.replace(/-/g, "/"));
+        const dStr = dt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+        html += `<div class="mb-section-title">${dStr}</div>`;
+        futureEvents.filter(e => e.date === d).forEach(ev => {
+          const color = CATS[ev.category] || "#5f6368";
+          html += `
+            <div class="mb-event-row" onclick="openMainWindow()">
+              <span class="mb-color-bar" style="background:${color}"></span>
+              <span class="mb-event-time">${formatTime12(ev.sTime)}</span>
+              <span class="mb-event-dot">·</span>
+              <span class="mb-event-title">${ev.title}</span>
+            </div>
+          `;
+        });
+      });
+
+      if (!html) {
+        html = '<div class="mb-empty-hint">今日与近期暂无日程安排</div>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    loadEvents();
+    setInterval(loadEvents, 30000);
+  </script>
+</body>
+</html>

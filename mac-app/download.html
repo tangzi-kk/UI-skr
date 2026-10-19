@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>年度看板 · REDMI K80 原生 APK 下载</title>
+  <style>
+    :root {
+      --bg: #0c0e14;
+      --card-bg: rgba(22, 27, 38, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent: #38bdf8;
+      --accent-grad: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", "MIUI", sans-serif;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: absolute;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(37, 99, 235, 0.03) 60%, transparent 80%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 32px 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+    .app-icon {
+      width: 88px;
+      height: 88px;
+      border-radius: 22px;
+      margin: 0 auto 16px;
+      box-shadow: 0 10px 25px rgba(56, 189, 248, 0.35);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      display: block;
+      object-fit: cover;
+    }
+    .app-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+    .app-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .k80-specs {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 14px 16px;
+      text-align: left;
+      margin-bottom: 24px;
+    }
+    .k80-specs-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .specs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .spec-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .spec-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+    .qr-card {
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 18px;
+      display: inline-block;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+    #qrcode canvas, #qrcode img {
+      display: block;
+      margin: 0 auto;
+    }
+    .qr-tip {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 15px;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: var(--accent-grad);
+      color: #ffffff;
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    }
+    .btn-primary:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .btn-secondary:active {
+      transform: scale(0.98);
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .footer-note {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <img src="./assets/design-elements/badge_star_3d.png" alt="App Icon" class="app-icon" />
+    <h1 class="app-title">年度看板 · 原生体验版</h1>
+    <div class="app-tag">
+      <span>●</span> REDMI K80 澎湃 OS 3.0 专属定制 · v1.5.6 上下滑动与手势交互全面修复版
+    </div>
+
+    <div class="k80-specs">
+      <div class="k80-specs-title">
+        <span>真机硬件与独立插画设计规范</span>
+        <span style="color:var(--success);">v1.5.6 手势与滑屏修复</span>
+      </div>
+      <div class="specs-grid">
+        <div class="spec-item"><span class="spec-dot"></span><span>滑屏: 彻底解除 100vh 与 overflow 锁定，顺畅支持单指上下平滑滚动</span></div>
+        <div class="spec-item"><span class="spec-dot"></span><span>手势: 支持全屏左右轻扫切换前一天/后一天/前后周，手势响应灵敏自然</span></div>
+        <div class="spec-item"><span class="spec-dot"></span><span>抽屉: 新增卡片抽屉下拉手势（Pull-down to dismiss），支持物理阻尼自然收起</span></div>
+        <div class="spec-item"><span class="spec-dot"></span><span>防冲突: 彻底消除八角罗盘长按与中枢面板的点击穿透冲突，拖拽长按阈值优化为 320ms</span></div>
+      </div>
+    </div>
+
+    <!-- 二维码 -->
+    <div class="qr-card">
+      <div id="qrcode"></div>
+    </div>
+    <p class="qr-tip">用 REDMI K80 相机或浏览器扫码直接下载</p>
+
+    <!-- 按钮 -->
+    <div class="btn-group">
+      <a href="./year-calendar-k80.apk" class="btn btn-primary" download="year-calendar-k80.apk">
+        <span>下载真机安装包 (v1.5.6 · 上下滑动与手势完全修复版)</span>
+      </a>
+      <a href="./architecture.html" class="btn btn-secondary" target="_blank" style="border-color: rgba(37,99,235,0.4); background: rgba(37,99,235,0.12); color:#60a5fa;">
+        <span>🏛️ 查阅【多平台统一新架构与流程图样】</span>
+      </a>
+      <a href="https://larkcommunity.feishu.cn/docx/YcT8dcKS9oNIFnxl04Ecn88FnNe" class="btn btn-secondary" target="_blank" style="border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.12); color:#34d399;">
+        <span>📖 飞书云文档 ·【北极星 AI 设计与全栈实施指南】</span>
+      </a>
+      <a href="./schedule.html" class="btn btn-secondary" target="_blank" style="border-color: rgba(56,189,248,0.3); background: rgba(56,189,248,0.1);">
+        <span>在线体验【Notion 日历与八角罗盘版】</span>
+      </a>
+      <a href="./mobile-app.html" class="btn btn-secondary" target="_blank">
+        <span>🌐 浏览器全景工作台预览</span>
+      </a>
+    </div>
+
+    <div class="footer-note">
+      提示：REDMI K80 安装时若提示“未知应用来源”，请点击“允许本次安装”即可进入沉浸式体验。
+    </div>
+  </div>
+
+  <script>
+    // 动态生成直连下载链接的二维码
+    const downloadUrl = window.location.origin + '/year-calendar-k80.apk';
+    const qrContainer = document.getElementById('qrcode');
+    
+    if (typeof QRCode !== 'undefined') {
+      QRCode.toCanvas(downloadUrl, {
+        width: 180,
+        margin: 1,
+        color: {
+          dark: '#0f172a',
+          light: '#ffffff'
+        }
+      }, function (error, canvas) {
+        if (!error && canvas) {
+          qrContainer.appendChild(canvas);
+        } else {
+          showFallbackQR();
+        }
+      });
+    } else {
+      showFallbackQR();
+    }
+
+    function showFallbackQR() {
+      // 备用纯 SVG / Image 方案
+      qrContainer.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(downloadUrl) + '" alt="QR Code" width="180" height="180" />';
+    }
+  </script>
+</body>
+</html>
