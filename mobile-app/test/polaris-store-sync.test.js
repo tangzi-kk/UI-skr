@@ -5,6 +5,18 @@ const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'polaris-store.js'), 'utf8');
 
+function assertAndroidAssetsAreCurrent() {
+  const mobileRoot = path.join(__dirname, '..');
+  const androidAssets = path.join(mobileRoot, 'android-project', 'app', 'src', 'main', 'assets');
+  for (const file of ['mobile-app.html', 'polaris-store.js']) {
+    assert.equal(
+      fs.readFileSync(path.join(androidAssets, file), 'utf8'),
+      fs.readFileSync(path.join(mobileRoot, file), 'utf8'),
+      `Android WebView asset is stale: ${file}`
+    );
+  }
+}
+
 function setup(fetchImpl) {
   const values = new Map();
   const localStorage = {
@@ -17,6 +29,8 @@ function setup(fetchImpl) {
 }
 
 async function run() {
+  assertAndroidAssetsAreCurrent();
+
   let pushes = 0;
   const store = setup(async (url, options) => {
     if (url.endsWith('/api/pull')) {

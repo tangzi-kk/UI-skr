@@ -677,4 +677,3 @@
   window.polarisStore = new PolarisStore();
 
 })(window);
-
