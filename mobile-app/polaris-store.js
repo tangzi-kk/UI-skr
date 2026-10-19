@@ -33,7 +33,7 @@
         ideas: [],          // 收集表 (灵感便笺)
         pendingChanges: [], // 待回写多维表格的增量变更队列
         lastSyncTime: null,
-        syncStatus: 'idle'  // 'idle' | 'syncing' | 'synced' | 'error'
+        syncStatus: 'idle'  // 'idle' | 'syncing' | 'pending' | 'synced' | 'error'
       };
 
       this.listeners = new Set();
@@ -193,16 +193,19 @@
       const target = targetDate || this.getTodayDateStr();
       const list = this.state.schedules.filter(s => s.date === target && !s.markedDelete);
       const deduped = this.deduplicateSchedules(list);
-      // 若指定日期尚无日程，但有最新日程，则返回最近可用的日程供展示
-      if (deduped.length === 0 && !targetDate) {
-        return this.deduplicateSchedules(this.state.schedules.filter(s => !s.markedDelete)).slice(0, 15);
-      }
       return deduped;
     }
 
     getWeekSchedules() {
-      // 获取当前周的排程记录 (自动过滤软删除与重复项)
-      return this.deduplicateSchedules(this.state.schedules.filter(s => !s.markedDelete)).slice(0, 30);
+      const today = new Date();
+      const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7));
+      const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+      const dateKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
+        '-' + String(d.getDate()).padStart(2, '0');
+      const start = dateKey(monday), end = dateKey(sunday);
+      return this.deduplicateSchedules(this.state.schedules.filter(s =>
+        !s.markedDelete && s.date >= start && s.date <= end))
+        .sort((a, b) => (a.startTime || a.date).localeCompare(b.startTime || b.date));
     }
 
     addSchedule(titleOrObj, category = '生活', dateStr = null, startTime = '09:00', endTime = '10:00') {
@@ -227,7 +230,7 @@
       const eFull = eTime.includes('T') ? eTime : `${date} ${eTime.length === 5 ? eTime + ':00' : eTime}`;
 
       const newRec = {
-        record_id: 'local_' + Date.now(),
+        record_id: 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
         date: date,
         startTime: sFull,
         endTime: eFull,
@@ -245,6 +248,7 @@
 
       this.state.schedules.unshift(newRec);
       this.state.pendingChanges.push({
+        _uid: newRec.record_id,
         op: 'create',
         fields: {
           '日期': newRec.date,
@@ -275,6 +279,8 @@
             record_id: targetId,
             fields: { '标记删除': true }
           });
+        } else if (targetId) {
+          this.state.pendingChanges = this.state.pendingChanges.filter(c => c._uid !== targetId);
         }
         this.notify();
         this.pushToFeishu().catch(() => {});
@@ -342,6 +348,15 @@
           record_id: targetId,
           fields: feishuFields
         });
+      } else if (targetId) {
+        const pendingCreate = this.state.pendingChanges.find(c => c.op === 'create' && c._uid === targetId);
+        if (pendingCreate) {
+          Object.assign(pendingCreate.fields, {
+            '日期': rec.date, '日程标题': rec.text, '开始时间': rec.startTime,
+            '结束时间': rec.endTime, '板块': rec.category, '完成状态': rec.status,
+            '备注': rec.note
+          });
+        }
       }
       this.notify();
       this.pushToFeishu().catch(() => {});
@@ -360,6 +375,9 @@
             record_id: targetId,
             fields: { '完成状态': [rec.status] }
           });
+        } else if (targetId) {
+          const pendingCreate = this.state.pendingChanges.find(c => c.op === 'create' && c._uid === targetId);
+          if (pendingCreate) pendingCreate.fields['完成状态'] = rec.status;
         }
         this.notify();
         this.pushToFeishu().catch(() => {});
@@ -553,9 +571,18 @@
         const data = await resp.json();
 
         if (data.ok && Array.isArray(data.records)) {
-          this.state.schedules = this.deduplicateSchedules(data.records.filter(r => !r.markedDelete));
+          // 远端快照不能覆盖尚未推送的本地创建、更新或删除。
+          const pending = this.state.pendingChanges.filter(c => ['create', 'update', 'soft_delete'].includes(c.op));
+          const localById = new Map(this.state.schedules.map(r => [r.record_id, r]));
+          const deletedIds = new Set(pending.filter(c => c.op === 'soft_delete').map(c => c.record_id));
+          const updatedIds = new Set(pending.filter(c => c.op === 'update').map(c => c.record_id));
+          const merged = data.records.filter(r => !r.markedDelete && !deletedIds.has(r.record_id))
+            .map(r => updatedIds.has(r.record_id) ? (localById.get(r.record_id) || r) : r);
+          const localCreated = this.state.schedules.filter(r =>
+            r.record_id && String(r.record_id).startsWith('local_') && !r.markedDelete);
+          this.state.schedules = this.deduplicateSchedules([...localCreated, ...merged]);
           this.state.lastSyncTime = new Date().toLocaleTimeString();
-          this.state.syncStatus = 'synced';
+          this.state.syncStatus = this.state.pendingChanges.length ? 'pending' : 'synced';
           this.notify();
           return { ok: true, count: this.state.schedules.length };
         } else {
@@ -568,9 +595,27 @@
       }
     }
 
-    async pushToFeishu() {
+    pushToFeishu() {
+      if (!this.pushPromise) {
+        this.pushPromise = this._pushToFeishu().finally(() => { this.pushPromise = null; });
+      }
+      return this.pushPromise;
+    }
+
+    async _pushToFeishu() {
       if (this.state.pendingChanges.length === 0) {
         return { ok: true, message: '暂无离线变更需要推送' };
+      }
+
+      // 当前 Mac /api/push 仅实现日程表。其他表项保留在本地队列，
+      // 禁止把它们误投为日程，也不能清空队列并宣称同步成功。
+      const scheduleChanges = this.state.pendingChanges.filter(c =>
+        ['create', 'update', 'soft_delete'].includes(c.op));
+      if (scheduleChanges.length === 0) {
+        this.state.syncStatus = 'pending';
+        this.notify();
+        return { ok: false, sent: 0, pending: this.state.pendingChanges.length,
+          message: '日程已同步；其他记录仍保存在本机，等待对应表的同步接口' };
       }
 
       this.state.syncStatus = 'syncing';
@@ -578,7 +623,7 @@
 
       try {
         const host = getMacSyncHost();
-        const changesToPush = [...this.state.pendingChanges];
+        const changesToPush = [...scheduleChanges];
         const resp = await fetch(`${host}/api/push`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -589,11 +634,21 @@
         const result = await resp.json();
 
         if (result.ok) {
-          this.state.pendingChanges = [];
+          const sent = new Set(changesToPush);
+          this.state.pendingChanges = this.state.pendingChanges.filter(c => !sent.has(c));
+          for (const mapping of result.createdRecords || []) {
+            if (!mapping._uid || !mapping.record_id) continue;
+            const local = this.state.schedules.find(r => r.record_id === mapping._uid);
+            if (local) {
+              local.record_id = mapping.record_id;
+              local.syncStatus = '已同步';
+            }
+          }
           this.state.lastSyncTime = new Date().toLocaleTimeString();
-          this.state.syncStatus = 'synced';
+          this.state.syncStatus = this.state.pendingChanges.length ? 'pending' : 'synced';
           this.notify();
-          return { ok: true, result };
+          return { ok: this.state.pendingChanges.length === 0, sent: changesToPush.length,
+            pending: this.state.pendingChanges.length, result };
         } else {
           throw new Error(result.error || '推送失败');
         }
@@ -609,3 +664,4 @@
   window.polarisStore = new PolarisStore();
 
 })(window);
+
