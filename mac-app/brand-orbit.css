@@ -1,0 +1,22 @@
+/* Polaris Orbit · 以蓝紫时钟图标为锚点的桌面主题覆盖层。 */
+.theme-classic {
+  --canvas-bg: #eff2fb;
+  --dot: #dbe2f3;
+  --sheet-border: #d5ddf0;
+  --hd: #273653;
+  --hd-deep: #202d49;
+  --hd-deeper: #1b2741;
+  --filler: #334365;
+  --mono-tint: #edf1fc;
+  --mono-chip: #6c7fa8;
+  --border: #d9e1f3;
+  --border-strong: #b6c5e8;
+  --ink: #202945;
+  --ink-soft: #5d6a86;
+  --ink-faint: #909cb5;
+  --ink-strong: #2b427e;
+  --hud-border: #d9e2f5;
+  --hud-hover: #edf2fd;
+  --accent: #607de7;
+  --mark-note: #607de7;
+}
