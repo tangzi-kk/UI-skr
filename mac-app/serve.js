@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { handleHealthRequest } = require('./health-service');
 function getSyncModule() {
   try {
     const syncPath = require.resolve('./sync');
@@ -77,6 +78,9 @@ const requestHandler = async (req, res) => {
   const host = req.headers.host || `localhost:${PORT}`;
   const urlObj = new URL(req.url, `http://${host}`);
   const pathname = urlObj.pathname;
+
+  // Health isolation: explicit-token API, does not touch existing schedule sync.
+  if (await handleHealthRequest(req, res, pathname)) return;
 
   // 0. API: /api/log (诊断收集客户端日志与报错)
   if (pathname === '/api/log') {

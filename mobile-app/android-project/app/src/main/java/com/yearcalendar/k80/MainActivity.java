@@ -96,6 +96,8 @@ public class MainActivity extends Activity {
     private void setupWebView() {
         RemoteLogger.i(TAG, "Creating WebView...");
         mWebView = new WebView(this);
+        // Bridge is only for explicit, user-authorized Health Connect reads.
+        mWebView.addJavascriptInterface(new HealthConnectBridge(this, mWebView), "PolarisNativeHealth");
         setContentView(mWebView);
         RemoteLogger.i(TAG, "setContentView(mWebView) completed");
 
